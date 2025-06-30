@@ -1,4 +1,3 @@
-
 {
   "name": "loveable-nextjs",
   "version": "0.1.0",
@@ -16,5 +15,9 @@
     "react-dom": "latest",
     "tailwindcss": "latest",
     "typescript": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/node": "latest"
   }
 }
