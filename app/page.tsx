@@ -1,13 +1,17 @@
 "use client"
 
 import { useState } from "react"
+import PromptInput from "../components/PromptInput"
+import PreviewPanel from "../components/PreviewPanel"
 import VersionHistory from "../components/VersionHistory"
+import Sidebar from "../components/Sidebar"
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
-  const [htmlOutput, setHtmlOutput] = useState("<p>Geef een prompt op en klik op Execute.</p>")
+  const [htmlOutput, setHtmlOutput] = useState("<p>Voer een prompt in en klik op Execute.</p>")
   const [supabaseOutput, setSupabaseOutput] = useState("")
   const [version, setVersion] = useState("")
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
 
   const handleSubmit = async () => {
     setHtmlOutput("<p>Laden...</p>")
@@ -32,49 +36,31 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-white font-sans">
-      <section className="w-1/3 bg-zinc-900 p-6 flex flex-col gap-6 border-r border-zinc-800">
-        <h1 className="text-2xl font-bold">Prompt</h1>
-        <textarea
-          className="flex-grow bg-zinc-800 p-4 rounded resize-none text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-          placeholder="Type je prompt hier..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
-        <button
-          className="bg-green-600 hover:bg-green-500 px-6 py-3 rounded text-lg font-semibold transition"
-          onClick={handleSubmit}
-        >
-          Execute
-        </button>
+    <div className="flex h-screen bg-zinc-900 text-white">
+      <Sidebar
+        prompt={prompt}
+        setPrompt={setPrompt}
+        onSubmit={handleSubmit}
+        supabaseOutput={supabaseOutput}
+        version={version}
+        toggleVersionHistory={() => setShowVersionHistory(!showVersionHistory)}
+      />
 
-        <div>
-          <h2 className="font-semibold text-sm text-zinc-400 mb-1">Supabase Instructions</h2>
-          <pre className="bg-zinc-800 p-3 rounded text-xs whitespace-pre-wrap max-h-32 overflow-y-auto">{supabaseOutput}</pre>
-        </div>
+      <main className="flex-1 p-6 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
+        <PreviewPanel html={htmlOutput} />
 
-        <div>
-          <h2 className="font-semibold text-sm text-zinc-400 mb-1">Version</h2>
-          <p className="text-xs text-zinc-300">{version}</p>
-        </div>
-
-        <VersionHistory
-          onSelect={(version) => {
-            setPrompt(version.prompt)
-            setHtmlOutput(version.html)
-            setSupabaseOutput(version.supabase_instructions)
-            setVersion(version.timestamp)
-          }}
-        />
-      </section>
-
-      <section className="w-2/3 p-6 overflow-y-auto bg-white text-black rounded-l-3xl shadow-inner">
-        <h1 className="text-2xl font-bold mb-6">Live Preview</h1>
-        <div
-          className="rounded bg-white p-6 shadow-inner min-h-[500px] prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: htmlOutput }}
-        />
-      </section>
+        {showVersionHistory && (
+          <VersionHistory
+            onSelect={(version) => {
+              setPrompt(version.prompt)
+              setHtmlOutput(version.html)
+              setSupabaseOutput(version.supabase_instructions)
+              setVersion(version.timestamp)
+              setShowVersionHistory(false)
+            }}
+          />
+        )}
+      </main>
     </div>
   )
 }
