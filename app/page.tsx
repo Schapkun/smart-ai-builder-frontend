@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import PromptInput from "../components/PromptInput"
 import PreviewPanel from "../components/PreviewPanel"
 import VersionHistory from "../components/VersionHistory"
 import Sidebar from "../components/Sidebar"
