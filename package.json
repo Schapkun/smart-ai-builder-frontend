@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@types/react": "latest",
-    "@types/node": "latest"
+    "@types/node": "latest",
+    "@tailwindcss/postcss": "latest"
   }
 }
