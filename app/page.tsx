@@ -1,7 +1,7 @@
-// app/page.tsx
 "use client"
 
 import { useState } from "react"
+import VersionHistory from "../components/VersionHistory"
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
@@ -22,7 +22,7 @@ export default function Home() {
       setSupabaseOutput(data.supabase_instructions || "-")
       setVersion(data.version_timestamp || "-")
     } catch (e) {
-      setHtmlOutput("<p class='text-red-500'>Error loading response</p>")
+      setHtmlOutput("<p className='text-red-500'>Error loading response</p>")
     }
   }
 
@@ -52,6 +52,16 @@ export default function Home() {
           <h2 className="font-medium text-sm text-zinc-400 mb-1">Version</h2>
           <pre className="text-zinc-300 text-sm">{version}</pre>
         </div>
+
+        {/* Hier integreren we de versiegeschiedenis */}
+        <VersionHistory
+          onSelect={(version) => {
+            setPrompt(version.prompt)
+            setHtmlOutput(version.html)
+            setSupabaseOutput(version.supabase_instructions)
+            setVersion(version.timestamp)
+          }}
+        />
       </section>
 
       <section className="w-2/3 p-6 overflow-y-auto bg-white text-black rounded-l-3xl shadow-lg">
