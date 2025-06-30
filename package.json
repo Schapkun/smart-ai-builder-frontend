@@ -8,18 +8,18 @@
     "start": "next start"
   },
   "dependencies": {
-    "autoprefixer": "latest",
     "next": "14.1.4",
-    "postcss": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "tailwindcss": "latest",
-    "typescript": "latest",
-    "@supabase/supabase-js": "latest"
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@supabase/supabase-js": "^2.31.0"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/node": "latest",
-    "@tailwindcss/postcss": "latest"
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.24",
+    "tailwindcss": "^3.3.2",
+    "typescript": "^5.1.3",
+    "@types/react": "^18.0.37",
+    "@types/node": "^20.3.1",
+    "@tailwindcss/typography": "^0.5.9"
   }
 }
