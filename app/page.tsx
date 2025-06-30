@@ -5,24 +5,29 @@ import VersionHistory from "../components/VersionHistory"
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
-  const [htmlOutput, setHtmlOutput] = useState("")
+  const [htmlOutput, setHtmlOutput] = useState("<p>Geef een prompt op en klik op Execute.</p>")
   const [supabaseOutput, setSupabaseOutput] = useState("")
   const [version, setVersion] = useState("")
 
   const handleSubmit = async () => {
-    setHtmlOutput("<p>Loading...</p>")
+    setHtmlOutput("<p>Laden...</p>")
     try {
       const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       })
+      if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
-      setHtmlOutput(data.html || "<p>No HTML returned</p>")
+      if (!data.html || data.html.trim() === "") {
+        setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
+      } else {
+        setHtmlOutput(data.html)
+      }
       setSupabaseOutput(data.supabase_instructions || "-")
       setVersion(data.version_timestamp || "-")
-    } catch (e) {
-      setHtmlOutput("<p className='text-red-500'>Error loading response</p>")
+    } catch (e: any) {
+      setHtmlOutput(`<p style="color:red">Fout bij AI-aanroep: ${e.message}</p>`)
     }
   }
 
@@ -53,7 +58,6 @@ export default function Home() {
           <pre className="text-zinc-300 text-sm">{version}</pre>
         </div>
 
-        {/* Hier integreren we de versiegeschiedenis */}
         <VersionHistory
           onSelect={(version) => {
             setPrompt(version.prompt)
