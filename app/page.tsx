@@ -19,6 +19,9 @@ export default function Home() {
       })
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
+
+      console.log("Backend response:", data)  // <-- extra debug logging
+
       if (!data.html || data.html.trim() === "") {
         setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
       } else {
