@@ -57,7 +57,7 @@ export default function Home() {
           prompt,
           html_preview: data.html,
           timestamp: data.version_timestamp,
-          supabase_instructions: data.supabase_instructions || "",
+          supabase_instructions: data.supabase_instructions || "{}",
         },
       ])
 
