@@ -18,7 +18,6 @@ export default function Home() {
   const [version, setVersion] = useState("")
   const [versions, setVersions] = useState<Version[]>([])
 
-  // Haal versiegeschiedenis op uit Supabase bij laden
   useEffect(() => {
     fetchVersions()
   }, [])
@@ -50,14 +49,12 @@ export default function Home() {
       if (!data.html || data.html.trim() === "") {
         setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
       } else {
-        // Decode JSON-escaped HTML-string netjes
         const decodedHtml = JSON.parse(`"${data.html.replace(/"/g, '\\"')}"`)
         setHtmlOutput(decodedHtml)
       }
       setSupabaseOutput(data.supabase_instructions || "-")
       setVersion(data.version_timestamp || "-")
 
-      // Sla nieuwe versie op in Supabase
       await supabase.from("versions").insert([
         {
           prompt,
@@ -68,7 +65,7 @@ export default function Home() {
       ])
       fetchVersions()
     } catch (e: any) {
-      setHtmlOutput(`<p style="color:red">Fout bij AI-aanroep: ${e.message}</p>`)
+      setHtmlOutput(`<p class="text-red-600">Fout bij AI-aanroep: ${e.message}</p>`)
     }
   }
 
@@ -81,11 +78,17 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
-      <section className="w-1/3 p-6 bg-zinc-900 flex flex-col gap-4 border-r border-zinc-800">
-        <h1 className="text-2xl font-bold">Prompt</h1>
+      {/* Left panel: prompt input + version history */}
+      <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
+        <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
+
+        <label htmlFor="prompt" className="font-semibold">
+          Prompt
+        </label>
         <textarea
+          id="prompt"
           className="flex-grow bg-zinc-800 p-4 rounded resize-none text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-          placeholder="Type je prompt hier..."
+          placeholder="Typ hier je prompt..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
@@ -98,7 +101,7 @@ export default function Home() {
 
         <div>
           <h2 className="font-semibold text-sm text-zinc-400 mb-1">Supabase Instructions</h2>
-          <pre className="bg-zinc-800 p-3 rounded text-xs whitespace-pre-wrap max-h-32 overflow-y-auto">{supabaseOutput}</pre>
+          <pre className="bg-zinc-800 p-3 rounded text-xs whitespace-pre-wrap max-h-28 overflow-y-auto">{supabaseOutput}</pre>
         </div>
 
         <div>
@@ -106,29 +109,33 @@ export default function Home() {
           <p className="text-xs text-zinc-300">{version}</p>
         </div>
 
-        <div>
+        <div className="flex-grow overflow-y-auto mt-4 border-t border-zinc-800 pt-4">
           <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
-          <ul className="max-h-48 overflow-auto space-y-1">
+          <ul className="space-y-1 max-h-[220px] overflow-auto">
             {versions.map((v) => (
               <li
                 key={v.id}
-                className="cursor-pointer px-2 py-1 rounded hover:bg-zinc-700"
+                className="cursor-pointer px-3 py-2 rounded hover:bg-zinc-700 transition"
                 onClick={() => selectVersion(v)}
               >
-                {new Date(v.timestamp).toLocaleString()} - {v.prompt.substring(0, 40)}...
+                <time dateTime={v.timestamp} className="block text-xs text-zinc-500">
+                  {new Date(v.timestamp).toLocaleString()}
+                </time>
+                <p className="truncate text-sm">{v.prompt}</p>
               </li>
             ))}
           </ul>
         </div>
-      </section>
+      </aside>
 
-      <section className="w-2/3 p-6 overflow-y-auto bg-white text-black rounded-l-3xl shadow-inner">
-        <h1 className="text-2xl font-bold mb-6">Live Preview</h1>
+      {/* Right panel: live preview */}
+      <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
+        <h1 className="text-3xl font-extrabold mb-6">Live Preview</h1>
         <div
           className="rounded bg-white p-6 shadow-inner min-h-[500px] prose max-w-none"
           dangerouslySetInnerHTML={{ __html: htmlOutput }}
         />
-      </section>
+      </main>
     </div>
   )
 }
