@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 
+// ─── Supabase Setup ─────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// ─── Types ───────────────────────────────────────────────────────
 interface Version {
   id: number
   timestamp: string
@@ -15,24 +17,28 @@ interface Version {
   supabase_instructions: string
 }
 
+// ─── Component ───────────────────────────────────────────────────
 export default function VersionHistory({ onSelect }: { onSelect: (version: Version) => void }) {
   const [versions, setVersions] = useState<Version[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setLoading(true)
-    supabase
-      .from("versions")
-      .select("*")
-      .order("timestamp", { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(error)
-        } else if (data) {
-          setVersions(data)
-        }
-        setLoading(false)
-      })
+    async function fetchVersions() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from("versions")
+        .select("id, timestamp, prompt, html_preview as html, supabase_instructions")
+        .order("timestamp", { ascending: false })
+
+      if (error) {
+        console.error("Fout bij ophalen versies:", error)
+      } else if (data) {
+        setVersions(data)
+      }
+      setLoading(false)
+    }
+
+    fetchVersions()
   }, [])
 
   return (
