@@ -49,9 +49,9 @@ export default function Home() {
       if (!data.html || data.html.trim() === "") {
         setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
       } else {
-        const decodedHtml = JSON.parse(`"${data.html.replace(/"/g, '\\"')}"`)
-        console.log("Live preview content:", decodedHtml)
-        setHtmlOutput(decodedHtml)
+        // DIRECT HTML GEBRUIKEN, geen JSON.parse
+        console.log("Live preview content:", data.html)
+        setHtmlOutput(data.html)
       }
       setSupabaseOutput(data.supabase_instructions || "-")
       setVersion(data.version_timestamp || "-")
