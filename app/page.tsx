@@ -49,7 +49,6 @@ export default function Home() {
       if (!data.html || data.html.trim() === "") {
         setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
       } else {
-        // DIRECT HTML GEBRUIKEN, geen JSON.parse
         console.log("Live preview content:", data.html)
         setHtmlOutput(data.html)
       }
@@ -70,6 +69,21 @@ export default function Home() {
     }
   }
 
+  async function handleSupabaseExecution() {
+    try {
+      const res = await fetch("https://smart-ai-builder-backend.onrender.com/execute-supabase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instructions: supabaseOutput }),
+      })
+
+      const data = await res.json()
+      alert(data.message || "Instructies uitgevoerd.")
+    } catch (err: any) {
+      alert("Fout bij uitvoeren: " + err.message)
+    }
+  }
+
   function selectVersion(v: Version) {
     setPrompt(v.prompt)
     setHtmlOutput(v.html)
@@ -83,9 +97,7 @@ export default function Home() {
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
 
-        <label htmlFor="prompt" className="font-semibold">
-          Prompt
-        </label>
+        <label htmlFor="prompt" className="font-semibold">Prompt</label>
         <textarea
           id="prompt"
           className="flex-grow bg-zinc-800 p-4 rounded resize-none text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -103,6 +115,12 @@ export default function Home() {
         <div>
           <h2 className="font-semibold text-sm text-zinc-400 mb-1">Supabase Instructions</h2>
           <pre className="bg-zinc-800 p-3 rounded text-xs whitespace-pre-wrap max-h-28 overflow-y-auto">{supabaseOutput}</pre>
+          <button
+            className="mt-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-sm font-medium transition"
+            onClick={handleSupabaseExecution}
+          >
+            Voer Supabase-instructies uit
+          </button>
         </div>
 
         <div>
