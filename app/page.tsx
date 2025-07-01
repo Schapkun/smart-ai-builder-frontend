@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { supabase } from "../lib/supabaseClient"
 
 interface Version {
@@ -17,6 +17,7 @@ export default function Home() {
   const [supabaseOutput, setSupabaseOutput] = useState("")
   const [version, setVersion] = useState("")
   const [versions, setVersions] = useState<Version[]>([])
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     fetchVersions()
@@ -46,12 +47,7 @@ export default function Home() {
       })
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
-      if (!data.html || data.html.trim() === "") {
-        setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
-      } else {
-        console.log("Live preview content:", data.html)
-        setHtmlOutput(data.html)
-      }
+      setHtmlOutput(data.html || "<div>Lege HTML</div>")
       setSupabaseOutput(data.supabase_instructions || "-")
       setVersion(data.version_timestamp || "-")
 
@@ -90,6 +86,17 @@ export default function Home() {
     setSupabaseOutput(v.supabase_instructions)
     setVersion(v.timestamp)
   }
+
+  useEffect(() => {
+    if (iframeRef.current) {
+      const doc = iframeRef.current.contentDocument
+      if (doc) {
+        doc.open()
+        doc.write(htmlOutput)
+        doc.close()
+      }
+    }
+  }, [htmlOutput])
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
@@ -150,26 +157,11 @@ export default function Home() {
       {/* Right panel */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <h1 className="text-3xl font-extrabold mb-6">Live Preview</h1>
-        <div
-          className="rounded bg-white p-6 shadow-inner min-h-[500px] prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: htmlOutput }}
+        <iframe
+          ref={iframeRef}
+          title="Live Preview"
+          className="w-full h-[85vh] rounded shadow-inner border"
         />
-
-        {/* Extra: toon Supabase data hier */}
-        <section className="mt-10">
-          <h2 className="text-xl font-bold mb-2">Supabase Data Preview</h2>
-          <ul className="text-sm text-black bg-gray-100 p-4 rounded shadow max-h-[300px] overflow-auto">
-            {versions.map((v) => (
-              <li key={v.id} className="mb-2 border-b border-gray-300 pb-1">
-                <strong>{v.prompt}</strong>
-                <br />
-                <span className="text-xs text-gray-600">
-                  {new Date(v.timestamp).toLocaleString()}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
       </main>
     </div>
   )
