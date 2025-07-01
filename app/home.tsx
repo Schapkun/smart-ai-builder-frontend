@@ -49,7 +49,7 @@ export default function Home() {
       if (!data.html || data.html.trim() === "") {
         setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
       } else {
-        const decodedHtml = JSON.parse("${data.html.replace(/"/g, '\\"')}")
+        const decodedHtml = JSON.parse(`"${data.html.replace(/"/g, '\\"')}"`)
         console.log("Live preview content:", decodedHtml)
         setHtmlOutput(decodedHtml)
       }
@@ -66,7 +66,7 @@ export default function Home() {
       ])
       fetchVersions()
     } catch (e: any) {
-      setHtmlOutput(<p class="text-red-600">Fout bij AI-aanroep: ${e.message}</p>)
+      setHtmlOutput(`<p class="text-red-600">Fout bij AI-aanroep: ${e.message}</p>`)
     }
   }
 
