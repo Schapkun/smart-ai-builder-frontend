@@ -6,18 +6,18 @@ import { supabase } from "../lib/supabaseClient"
 interface Version {
   id: string
   prompt: string
-  html: string
-  supabase_instructions: string
+  html_preview: string
+  html_live: string
   timestamp: string
 }
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
-  const [supabaseOutput, setSupabaseOutput] = useState("")
-  const [version, setVersion] = useState("")
+  const [versionId, setVersionId] = useState<string | null>(null)
   const [versions, setVersions] = useState<Version[]>([])
   const [htmlPreview, setHtmlPreview] = useState("")
   const [showLiveProject, setShowLiveProject] = useState(true)
+  const [loadingPublish, setLoadingPublish] = useState(false)
 
   useEffect(() => {
     fetchVersions()
@@ -47,48 +47,71 @@ export default function Home() {
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
 
-      setSupabaseOutput(data.supabase_instructions || "-")
-      setVersion(data.version_timestamp || "-")
       setHtmlPreview(data.html || "")
-
-      // ⬇️ Automatisch overschakelen naar gegenereerde HTML
+      setVersionId(data.version_timestamp || null)
       setShowLiveProject(false)
 
+      // Nieuwe versie opslaan in Supabase met preview
       await supabase.from("versions").insert([
         {
           prompt,
-          html: data.html,
-          supabase_instructions: data.supabase_instructions,
+          html_preview: data.html,
           timestamp: data.version_timestamp,
         },
       ])
+
       fetchVersions()
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
   }
 
-  async function handleSupabaseExecution() {
+  async function publishLive() {
+    if (!versionId) {
+      alert("Selecteer eerst een versie om live te zetten.")
+      return
+    }
+
+    setLoadingPublish(true)
     try {
-      const res = await fetch("https://smart-ai-builder-backend.onrender.com/execute-supabase", {
+      // Zoek versie op met timestamp (of pas aan naar id als dat handiger is)
+      const { data, error } = await supabase
+        .from("versions")
+        .select("id")
+        .eq("timestamp", versionId)
+        .single()
+
+      if (error || !data) {
+        alert("Kon versie niet vinden: " + error?.message)
+        setLoadingPublish(false)
+        return
+      }
+
+      const publishRes = await fetch("https://smart-ai-builder-backend.onrender.com/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instructions: supabaseOutput }),
+        body: JSON.stringify({ version_id: data.id }),
       })
 
-      const data = await res.json()
-      alert(data.message || "Instructies uitgevoerd.")
+      const publishData = await publishRes.json()
+      if (publishRes.ok) {
+        alert("Live versie succesvol bijgewerkt!")
+        setShowLiveProject(true)
+        fetchVersions()
+      } else {
+        alert("Fout bij publiceren: " + publishData.error || publishData.message)
+      }
     } catch (err: any) {
-      alert("Fout bij uitvoeren: " + err.message)
+      alert("Fout bij publiceren: " + err.message)
     }
+    setLoadingPublish(false)
   }
 
   function selectVersion(v: Version) {
     setPrompt(v.prompt)
-    setSupabaseOutput(v.supabase_instructions)
-    setVersion(v.timestamp)
-    setHtmlPreview(v.html)
-    setShowLiveProject(false) // ⬅️ direct preview van geselecteerde versie
+    setHtmlPreview(v.html_preview)
+    setVersionId(v.timestamp)
+    setShowLiveProject(false)
   }
 
   return (
@@ -112,23 +135,15 @@ export default function Home() {
           Execute
         </button>
 
-        <div>
-          <h2 className="font-semibold text-sm text-zinc-400 mb-1">Supabase Instructions</h2>
-          <pre className="bg-zinc-800 p-3 rounded text-xs whitespace-pre-wrap max-h-28 overflow-y-auto">{supabaseOutput}</pre>
-          <button
-            className="mt-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-sm font-medium transition"
-            onClick={handleSupabaseExecution}
-          >
-            Voer Supabase-instructies uit
-          </button>
-        </div>
+        <button
+          disabled={!versionId || loadingPublish}
+          onClick={publishLive}
+          className={`mt-4 px-6 py-3 rounded text-lg font-semibold transition ${versionId && !loadingPublish ? 'bg-blue-600 hover:bg-blue-500' : 'bg-zinc-700 cursor-not-allowed'}`}
+        >
+          {loadingPublish ? "Publiceren..." : "Publiceer live"}
+        </button>
 
         <div>
-          <h2 className="font-semibold text-sm text-zinc-400 mb-1">Version</h2>
-          <p className="text-xs text-zinc-300">{version}</p>
-        </div>
-
-        <div className="flex-grow overflow-y-auto mt-4 border-t border-zinc-800 pt-4">
           <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
           <ul className="space-y-1 max-h-[220px] overflow-auto">
             {versions.map((v) => (
@@ -155,7 +170,7 @@ export default function Home() {
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
           >
-            {showLiveProject ? "Toon gegenereerde HTML" : "Toon Live Project"}
+            {showLiveProject ? "Toon preview" : "Toon live"}
           </button>
         </div>
 
