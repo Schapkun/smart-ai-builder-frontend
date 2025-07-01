@@ -154,6 +154,22 @@ export default function Home() {
           className="rounded bg-white p-6 shadow-inner min-h-[500px] prose max-w-none"
           dangerouslySetInnerHTML={{ __html: htmlOutput }}
         />
+
+        {/* Extra: toon Supabase data hier */}
+        <section className="mt-10">
+          <h2 className="text-xl font-bold mb-2">Supabase Data Preview</h2>
+          <ul className="text-sm text-black bg-gray-100 p-4 rounded shadow max-h-[300px] overflow-auto">
+            {versions.map((v) => (
+              <li key={v.id} className="mb-2 border-b border-gray-300 pb-1">
+                <strong>{v.prompt}</strong>
+                <br />
+                <span className="text-xs text-gray-600">
+                  {new Date(v.timestamp).toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
     </div>
   )
