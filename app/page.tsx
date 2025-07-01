@@ -51,12 +51,13 @@ export default function Home() {
       setVersionId(data.version_timestamp || null)
       setShowLiveProject(false)
 
-      // Nieuwe versie opslaan in Supabase met preview
+      // ✅ Toegevoegd: supabase_instructions veld
       await supabase.from("versions").insert([
         {
           prompt,
           html_preview: data.html,
           timestamp: data.version_timestamp,
+          supabase_instructions: "", // <- essentieel om 400 error te vermijden
         },
       ])
 
@@ -74,7 +75,6 @@ export default function Home() {
 
     setLoadingPublish(true)
     try {
-      // Zoek versie op met timestamp (of pas aan naar id als dat handiger is)
       const { data, error } = await supabase
         .from("versions")
         .select("id")
@@ -116,7 +116,6 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
-      {/* Left panel */}
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
 
@@ -162,7 +161,6 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Right panel */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-extrabold">Live Project Preview</h1>
