@@ -52,14 +52,28 @@ export default function Home() {
       setShowLiveProject(false)
 
       // ✅ Correcte insert met alle verplichte velden
-      await supabase.from("versions").insert([
-        {
-          prompt,
-          html_preview: data.html,
-          timestamp: data.version_timestamp,
-          supabase_instructions: data.supabase_instructions || "{}",
-        },
-      ])
+      const safeHtml = data.html || "<div>Geen HTML gegenereerd</div>"
+const safeTimestamp = data.version_timestamp || new Date().toISOString()
+const safeInstructions = typeof data.supabase_instructions === "string"
+  ? data.supabase_instructions
+  : JSON.stringify(data.supabase_instructions || {})
+
+console.log("Insert data:", {
+  prompt,
+  html_preview: safeHtml,
+  timestamp: safeTimestamp,
+  supabase_instructions: safeInstructions,
+})
+
+await supabase.from("versions").insert([
+  {
+    prompt,
+    html_preview: safeHtml,
+    timestamp: safeTimestamp,
+    supabase_instructions: safeInstructions,
+  },
+])
+
 
       fetchVersions()
     } catch (e: any) {
