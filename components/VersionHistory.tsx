@@ -27,14 +27,20 @@ export default function VersionHistory({ onSelect }: { onSelect: (version: Versi
       setLoading(true)
       const { data, error } = await supabase
         .from("versions")
-        .select("id, timestamp, prompt, html_preview as html, supabase_instructions")
+        .select("id, timestamp, prompt, html_preview, supabase_instructions")
         .order("timestamp", { ascending: false })
 
       if (error) {
         console.error("Fout bij ophalen versies:", error)
       } else if (data) {
-        setVersions(data)
+        // Handmatig html_preview → html mappen
+        const mapped = data.map((item) => ({
+          ...item,
+          html: item.html_preview,
+        }))
+        setVersions(mapped)
       }
+
       setLoading(false)
     }
 
