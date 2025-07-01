@@ -50,6 +50,7 @@ export default function Home() {
         setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
       } else {
         const decodedHtml = JSON.parse(`"${data.html.replace(/"/g, '\\"')}"`)
+        console.log("Live preview content:", decodedHtml)
         setHtmlOutput(decodedHtml)
       }
       setSupabaseOutput(data.supabase_instructions || "-")
@@ -78,7 +79,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
-      {/* Left panel: prompt input + version history */}
+      {/* Left panel */}
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
 
@@ -128,7 +129,7 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Right panel: live preview */}
+      {/* Right panel */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <h1 className="text-3xl font-extrabold mb-6">Live Preview</h1>
         <div
