@@ -51,29 +51,27 @@ export default function Home() {
       setVersionId(data.version_timestamp || null)
       setShowLiveProject(false)
 
-      // ✅ Correcte insert met alle verplichte velden
       const safeHtml = data.html || "<div>Geen HTML gegenereerd</div>"
-const safeTimestamp = data.version_timestamp || new Date().toISOString()
-const safeInstructions = typeof data.supabase_instructions === "string"
-  ? data.supabase_instructions
-  : JSON.stringify(data.supabase_instructions || {})
+      const safeTimestamp = data.version_timestamp || new Date().toISOString()
 
-console.log("Insert data:", {
-  prompt,
-  html_preview: safeHtml,
-  timestamp: safeTimestamp,
-  supabase_instructions: safeInstructions,
-})
+      let safeInstructions = {}
+      try {
+        safeInstructions =
+          typeof data.supabase_instructions === "string"
+            ? JSON.parse(data.supabase_instructions)
+            : data.supabase_instructions || {}
+      } catch (e) {
+        safeInstructions = {}
+      }
 
-await supabase.from("versions").insert([
-  {
-    prompt,
-    html_preview: safeHtml,
-    timestamp: safeTimestamp,
-    supabase_instructions: safeInstructions,
-  },
-])
-
+      await supabase.from("versions").insert([
+        {
+          prompt,
+          html_preview: safeHtml,
+          timestamp: safeTimestamp,
+          supabase_instructions: safeInstructions,
+        },
+      ])
 
       fetchVersions()
     } catch (e: any) {
@@ -130,7 +128,6 @@ await supabase.from("versions").insert([
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
-      {/* Left panel */}
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
 
@@ -176,7 +173,6 @@ await supabase.from("versions").insert([
         </div>
       </aside>
 
-      {/* Right panel */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-extrabold">Live Project Preview</h1>
