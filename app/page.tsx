@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { supabase } from "../lib/supabaseClient"
 
 interface Version {
@@ -13,9 +13,11 @@ interface Version {
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
+  const [htmlOutput, setHtmlOutput] = useState("<p>Voer een prompt in en klik op Execute.</p>")
   const [supabaseOutput, setSupabaseOutput] = useState("")
   const [version, setVersion] = useState("")
   const [versions, setVersions] = useState<Version[]>([])
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     fetchVersions()
@@ -36,6 +38,7 @@ export default function Home() {
   }
 
   async function handleSubmit() {
+    setHtmlOutput("<p>Laden...</p>")
     try {
       const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
         method: "POST",
@@ -44,7 +47,7 @@ export default function Home() {
       })
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
-
+      setHtmlOutput(data.html || "<div>Lege HTML</div>")
       setSupabaseOutput(data.supabase_instructions || "-")
       setVersion(data.version_timestamp || "-")
 
@@ -58,7 +61,7 @@ export default function Home() {
       ])
       fetchVersions()
     } catch (e: any) {
-      alert("Fout bij AI-aanroep: " + e.message)
+      setHtmlOutput(`<p class="text-red-600">Fout bij AI-aanroep: ${e.message}</p>`)
     }
   }
 
@@ -79,9 +82,21 @@ export default function Home() {
 
   function selectVersion(v: Version) {
     setPrompt(v.prompt)
+    setHtmlOutput(v.html)
     setSupabaseOutput(v.supabase_instructions)
     setVersion(v.timestamp)
   }
+
+  useEffect(() => {
+    if (iframeRef.current) {
+      const doc = iframeRef.current.contentDocument
+      if (doc) {
+        doc.open()
+        doc.write(htmlOutput)
+        doc.close()
+      }
+    }
+  }, [htmlOutput])
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
@@ -139,12 +154,12 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Right panel with live Supabase app preview */}
+      {/* Right panel */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
-        <h1 className="text-3xl font-extrabold mb-6">Live Project Preview</h1>
+        <h1 className="text-3xl font-extrabold mb-6">Live Preview</h1>
         <iframe
-          src="https://meester.app"  // <-- Vervang dit door jouw echte Supabase frontend URL
-          title="Live Supabase Project"
+          ref={iframeRef}
+          title="Live Preview"
           className="w-full h-[85vh] rounded shadow-inner border"
         />
       </main>
