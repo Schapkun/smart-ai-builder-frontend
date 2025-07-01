@@ -50,7 +50,9 @@ export default function Home() {
       if (!data.html || data.html.trim() === "") {
         setHtmlOutput("<p>Geen geldige HTML ontvangen van backend.</p>")
       } else {
-        setHtmlOutput(data.html)
+        // Decode JSON-escaped HTML-string netjes
+        const decodedHtml = JSON.parse(`"${data.html.replace(/"/g, '\\"')}"`)
+        setHtmlOutput(decodedHtml)
       }
       setSupabaseOutput(data.supabase_instructions || "-")
       setVersion(data.version_timestamp || "-")
