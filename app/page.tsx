@@ -16,6 +16,8 @@ export default function Home() {
   const [supabaseOutput, setSupabaseOutput] = useState("")
   const [version, setVersion] = useState("")
   const [versions, setVersions] = useState<Version[]>([])
+  const [htmlPreview, setHtmlPreview] = useState("")
+  const [showLiveProject, setShowLiveProject] = useState(true)
 
   useEffect(() => {
     fetchVersions()
@@ -47,6 +49,7 @@ export default function Home() {
 
       setSupabaseOutput(data.supabase_instructions || "-")
       setVersion(data.version_timestamp || "-")
+      setHtmlPreview(data.html || "")
 
       await supabase.from("versions").insert([
         {
@@ -81,6 +84,7 @@ export default function Home() {
     setPrompt(v.prompt)
     setSupabaseOutput(v.supabase_instructions)
     setVersion(v.timestamp)
+    setHtmlPreview(v.html)
   }
 
   return (
@@ -139,14 +143,30 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Right panel with live Supabase app preview */}
+      {/* Right panel */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
-        <h1 className="text-3xl font-extrabold mb-6">Live Project Preview</h1>
-        <iframe
-          src="https://meester.app"  // <-- Vervang dit door jouw echte Supabase frontend URL
-          title="Live Supabase Project"
-          className="w-full h-[85vh] rounded shadow-inner border"
-        />
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-extrabold">Live Project Preview</h1>
+          <button
+            onClick={() => setShowLiveProject(!showLiveProject)}
+            className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
+          >
+            {showLiveProject ? "Toon gegenereerde HTML" : "Toon Live Project"}
+          </button>
+        </div>
+
+        {showLiveProject ? (
+          <iframe
+            src="https://meester.app"
+            title="Live Supabase Project"
+            className="w-full h-[85vh] rounded shadow-inner border"
+          />
+        ) : (
+          <div
+            className="w-full h-[85vh] rounded border p-4 overflow-auto"
+            dangerouslySetInnerHTML={{ __html: htmlPreview }}
+          />
+        )}
       </main>
     </div>
   )
