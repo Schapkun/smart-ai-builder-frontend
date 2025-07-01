@@ -51,6 +51,9 @@ export default function Home() {
       setVersion(data.version_timestamp || "-")
       setHtmlPreview(data.html || "")
 
+      // ⬇️ Automatisch overschakelen naar gegenereerde HTML
+      setShowLiveProject(false)
+
       await supabase.from("versions").insert([
         {
           prompt,
@@ -85,6 +88,7 @@ export default function Home() {
     setSupabaseOutput(v.supabase_instructions)
     setVersion(v.timestamp)
     setHtmlPreview(v.html)
+    setShowLiveProject(false) // ⬅️ direct preview van geselecteerde versie
   }
 
   return (
