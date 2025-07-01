@@ -51,13 +51,13 @@ export default function Home() {
       setVersionId(data.version_timestamp || null)
       setShowLiveProject(false)
 
-      // ✅ Toegevoegd: supabase_instructions veld
+      // ✅ Correcte insert met alle verplichte velden
       await supabase.from("versions").insert([
         {
           prompt,
           html_preview: data.html,
           timestamp: data.version_timestamp,
-          supabase_instructions: "", // <- essentieel om 400 error te vermijden
+          supabase_instructions: data.supabase_instructions || "",
         },
       ])
 
@@ -99,7 +99,7 @@ export default function Home() {
         setShowLiveProject(true)
         fetchVersions()
       } else {
-        alert("Fout bij publiceren: " + publishData.error || publishData.message)
+        alert("Fout bij publiceren: " + (publishData.error || publishData.message))
       }
     } catch (err: any) {
       alert("Fout bij publiceren: " + err.message)
@@ -116,6 +116,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
+      {/* Left panel */}
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
 
@@ -161,6 +162,7 @@ export default function Home() {
         </div>
       </aside>
 
+      {/* Right panel */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-extrabold">Live Project Preview</h1>
