@@ -14,7 +14,7 @@ interface Version {
 }
 
 interface ChatMessage {
-  role: "user" | "ai"
+  role: "user" | "assistant"
   content: string
   html?: string
   explanation?: string
@@ -75,7 +75,7 @@ export default function Home() {
 
     const userInput = prompt
     const userMsg: ChatMessage = { role: "user", content: userInput }
-    const loadingMsg: ChatMessage = { role: "ai", content: "...", loading: true }
+    const loadingMsg: ChatMessage = { role: "assistant", content: "...", loading: true }
     setChatHistory((prev) => [...prev, userMsg, loadingMsg])
     setPrompt("")
 
@@ -95,11 +95,12 @@ export default function Home() {
 
       const instructions = data.instructions || {}
       const aiMsg: ChatMessage = {
-        role: "ai",
+        role: "assistant",
         content: instructions.message || "Ik heb je prompt ontvangen.",
         html: data.html || undefined,
         explanation: instructions.message || undefined,
         hasChanges: !!data.html,
+        loading: false,
       }
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
@@ -205,13 +206,13 @@ export default function Home() {
                 }`}
               >
                 <div className="whitespace-pre-line">{msg.content}</div>
-                {msg.role === "ai" && msg.loading && (
+                {msg.role === "assistant" && msg.loading && (
                   <div className="text-xs text-zinc-500 mt-1 italic animate-pulse">AI is aan het typen...</div>
                 )}
-                {msg.role === "ai" && msg.explanation && (
+                {msg.role === "assistant" && msg.explanation && (
                   <div className="text-xs text-zinc-600 mt-1 italic">{msg.explanation}</div>
                 )}
-                {msg.role === "ai" && msg.hasChanges && (
+                {msg.role === "assistant" && msg.hasChanges && (
                   <button
                     onClick={() => implementChange(msg.html!, msg.content)}
                     className="mt-2 text-sm text-blue-600 underline"
