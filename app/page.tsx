@@ -1,233 +1,301 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from openai import OpenAI
-from supabase import create_client
-from datetime import datetime, timezone
-import os
-import sys
-import json
-from bs4 import BeautifulSoup
+"use client"
 
-app = FastAPI()
+import { useState, useEffect, useRef } from "react"
+import { supabase } from "../lib/supabaseClient"
+import { RefreshCcw, Upload } from "lucide-react"
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://smart-ai-builder-frontend.onrender.com",
-        "https://meester.app"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+interface Version {
+  id: string
+  prompt: string
+  page_route?: string
+  html_preview: string
+  html_live: string
+  timestamp: string
+}
 
-# ✅ ENVIRONMENT VARS
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_SERVICE_ROLE")
-openai_key = os.getenv("OPENAI_API_KEY")
+interface ChatMessage {
+  role: "user" | "ai"
+  content: string
+  html?: string
+  explanation?: string
+  hasChanges?: boolean
+  loading?: boolean
+}
 
-if not supabase_url or not supabase_key:
-    raise Exception("SUPABASE_URL en SUPABASE_SERVICE_ROLE moeten zijn ingesteld")
-if not openai_key:
-    raise Exception("OPENAI_API_KEY ontbreekt")
+export default function Home() {
+  const [prompt, setPrompt] = useState("")
+  const [versionId, setVersionId] = useState<string | null>(null)
+  const [versions, setVersions] = useState<Version[]>([])
+  const [htmlPreview, setHtmlPreview] = useState("")
+  const [showLiveProject, setShowLiveProject] = useState(true)
+  const [loadingPublish, setLoadingPublish] = useState(false)
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-supabase = create_client(supabase_url, supabase_key)
-openai = OpenAI(api_key=openai_key)
+  const [currentPageRoute, setCurrentPageRoute] = useState("")
 
-print("✅ SUPABASE_URL:", supabase_url, file=sys.stderr)
-print("✅ OPENAI_API_KEY:", (openai_key[:5] + "..."), file=sys.stderr)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const route = window.location.pathname
+      setCurrentPageRoute(route)
 
+      fetch(`https://smart-ai-builder-backend.onrender.com/preview${route}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.html) {
+            setHtmlPreview(data.html)
+            setShowLiveProject(false)
+          }
+        })
+        .catch(err => console.error("Fout bij ophalen preview:", err))
+    }
 
-# ✅ STRUCTURE
-class Message(BaseModel):
-    role: str
-    content: str
+    fetchVersions()
+  }, [])
 
-class PromptRequest(BaseModel):
-    prompt: str
-    page_route: str
-    chat_history: list[Message]
+  useEffect(() => {
+    scrollToBottom()
+  }, [chatHistory])
 
-class PublishRequest(BaseModel):
-    version_id: str
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
-class InitRequest(BaseModel):
-    html: str
-    page_route: str
+  async function fetchVersions() {
+    const { data, error } = await supabase
+      .from("versions")
+      .select("*")
+      .order("timestamp", { ascending: false })
+      .limit(20)
 
+    if (error) {
+      console.error("Fout bij ophalen versies:", error)
+      return
+    }
+    setVersions(data || [])
+  }
 
-# ✅ HELPER
-def validate_and_fix_html(html: str) -> str:
-    try:
-        soup = BeautifulSoup(html, "html.parser")
-        return str(soup)
-    except Exception as e:
-        print(f"❌ HTML validatie fout: {e}", file=sys.stderr)
-        return html
+  async function handleSubmit() {
+    if (prompt.trim() === "") return
 
+    const userInput = prompt
+    const userMsg: ChatMessage = { role: "user", content: userInput }
+    const loadingMsg: ChatMessage = { role: "ai", content: "...", loading: true }
+    setChatHistory((prev) => [...prev, userMsg, loadingMsg])
+    setPrompt("")
 
-# ✅ POST /prompt
-@app.post("/prompt")
-async def handle_prompt(req: PromptRequest, request: Request):
-    origin = request.headers.get("origin")
-    print("🌐 Inkomend verzoek van origin:", origin, file=sys.stderr)
+    try {
+      const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: userInput,
+          page_route: currentPageRoute,
+          chat_history: chatHistory,
+        }),
+      })
 
-    try:
-        result = supabase.table("versions") \
-            .select("html_preview", "html_live") \
-            .eq("page_route", req.page_route) \
-            .order("timestamp", desc=True) \
-            .limit(1) \
-            .execute()
+      if (!res.ok) throw new Error("Backend fout: " + res.statusText)
+      const data = await res.json()
 
-        current_html = "<html><body><div>Welkom</div></body></html>"
-        if result.data and isinstance(result.data, list):
-            latest = result.data[0]
-            if latest.get("html_preview"):
-                current_html = latest["html_preview"]
-            elif latest.get("html_live"):
-                current_html = latest["html_live"]
+      const instructions = data.instructions || {}
+      const aiMsg: ChatMessage = {
+        role: "ai",
+        content: instructions.message || "Ik heb je prompt ontvangen.",
+        html: data.html || undefined,
+        explanation: instructions.message || undefined,
+        hasChanges: !!data.html,
+      }
 
-        system_message = {
-            "role": "system",
-            "content": (
-                f"Je bent een AI-assistent die helpt met het aanpassen van HTML voor een website.\n"
-                f"De gebruiker werkt aan pagina: {req.page_route}.\n"
-                f"De huidige HTML van die pagina is:\n{current_html}\n"
-                f"Wanneer je een wijziging uitvoert, geef dan alleen de volledige aangepaste HTML terug, zonder uitleg of voorbeeldcode.\n"
-                f"Geef geen gedeeltelijke HTML of codefragmenten, alleen de volledige HTML.\n"
-                f"Als het een vraag of advies is, geef dan alleen een vriendelijk antwoord zonder HTML."
-            )
-        }
+      setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
+    } catch (e: any) {
+      alert("Fout bij AI-aanroep: " + e.message)
+    }
+  }
 
-        messages = [system_message] + [
-            {"role": msg.role, "content": msg.content} for msg in req.chat_history
-        ] + [{"role": "user", "content": req.prompt}]
+  async function implementChange(html: string, originalPrompt: string) {
+    const timestamp = new Date().toISOString()
+    setHtmlPreview(html)
+    setShowLiveProject(false)
 
-        explanation_prompt = (
-            "Beantwoord vriendelijk en duidelijk.\n"
-            "Als het een wijziging betreft, geef in 1 zin aan wat er is aangepast."
-        )
+    const { error } = await supabase.from("versions").insert([
+      {
+        prompt: originalPrompt,
+        html_preview: html,
+        timestamp,
+        supabase_instructions: { bron: "chat-implementatie" },
+        page_route: currentPageRoute,
+      },
+    ])
 
-        explanation = openai.chat.completions.create(
-            model="gpt-4",
-            messages=messages + [{"role": "system", "content": explanation_prompt}],
-            temperature=0.4,
-        ).choices[0].message.content.strip()
+    if (!error) fetchVersions()
+  }
 
-        action_keywords = ["verander", "pas aan", "voeg toe", "verwijder", "zet", "maak", "stel in", "kleur", "toon"]
-        if any(k in req.prompt.lower() for k in action_keywords):
-            html_prompt_text = (
-                "Je krijgt hieronder de huidige volledige HTML.\n"
-                "Pas deze HTML volledig aan volgens het gebruikersverzoek.\n"
-                "Geef alleen de volledige nieuwe HTML terug, zonder uitleg of voorbeeldcode.\n\n"
-                f"Huidige HTML:\n{current_html}\n\n"
-                f"Gebruikersverzoek:\n{req.prompt}\n\n"
-                "Nieuwe volledige HTML:\n"
-            )
+  async function publishLive() {
+    if (!versionId) {
+      alert("Selecteer eerst een versie om live te zetten.")
+      return
+    }
 
-            html = openai.chat.completions.create(
-                model="gpt-4",
-                messages=messages + [{"role": "system", "content": html_prompt_text}],
-                temperature=0,
-            ).choices[0].message.content.strip()
+    setLoadingPublish(true)
+    try {
+      const { data, error } = await supabase
+        .from("versions")
+        .select("id")
+        .eq("timestamp", versionId)
+        .single()
 
-            html = validate_and_fix_html(html)
-        else:
-            html = None
+      if (error || !data) {
+        alert("Kon versie niet vinden: " + error?.message)
+        setLoadingPublish(false)
+        return
+      }
 
-        timestamp = datetime.now(timezone.utc).isoformat(timespec="microseconds")
-        instructions = {
-            "message": explanation,
-            "generated_by": "AI v3"
-        }
+      const publishRes = await fetch("https://smart-ai-builder-backend.onrender.com/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ version_id: data.id }),
+      })
 
-        if html:
-            supabase.table("versions").insert({
-                "prompt": req.prompt,
-                "html_preview": html,
-                "page_route": req.page_route,
-                "timestamp": timestamp,
-                "supabase_instructions": json.dumps(instructions),
-            }).execute()
-        else:
-            print("ℹ️ Geen nieuwe HTML gegenereerd, geen versie opgeslagen.")
+      const publishData = await publishRes.json()
+      if (publishRes.ok) {
+        alert("Live versie succesvol bijgewerkt!")
+        setShowLiveProject(true)
+        fetchVersions()
+      } else {
+        alert("Fout bij publiceren: " + (publishData.error || publishData.message))
+      }
+    } catch (err: any) {
+      alert("Fout bij publiceren: " + err.message)
+    }
+    setLoadingPublish(false)
+  }
 
-        return {
-            "html": html,
-            "version_timestamp": timestamp,
-            "instructions": instructions
-        }
+  function selectVersion(v: Version) {
+    setPrompt(v.prompt)
+    setHtmlPreview(v.html_preview)
+    setVersionId(v.timestamp)
+    setShowLiveProject(false)
+  }
 
-    except Exception as e:
-        print("❌ ERROR in /prompt route:", str(e), file=sys.stderr)
-        return JSONResponse(status_code=500, content={"error": "Interne fout bij verwerken prompt."})
+  return (
+    <div className="flex h-screen bg-zinc-900 text-white">
+      <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
+        <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
 
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={fetchVersions}
+            className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full"
+            title="Ververs preview"
+          >
+            <RefreshCcw size={18} />
+          </button>
+          <button
+            disabled={!versionId || loadingPublish}
+            onClick={publishLive}
+            className="bg-blue-600 hover:bg-blue-500 px-3 py-2 text-xs rounded-full flex items-center gap-1 disabled:opacity-50"
+          >
+            <Upload size={14} /> Publiceer live
+          </button>
+        </div>
 
-# ✅ POST /publish
-@app.post("/publish")
-async def publish_version(req: PublishRequest):
-    try:
-        version = supabase.table("versions") \
-            .select("html_preview") \
-            .eq("id", req.version_id) \
-            .single() \
-            .execute()
+        <div className="flex-1 overflow-auto">
+          <div className="flex flex-col gap-2">
+            {chatHistory.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-lg max-w-[95%] ${
+                  msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"
+                }`}
+              >
+                <div className="whitespace-pre-line">{msg.content}</div>
+                {msg.role === "ai" && msg.loading && (
+                  <div className="text-xs text-zinc-500 mt-1 italic animate-pulse">AI is aan het typen...</div>
+                )}
+                {msg.role === "ai" && msg.explanation && (
+                  <div className="text-xs text-zinc-600 mt-1 italic">{msg.explanation}</div>
+                )}
+                {msg.role === "ai" && msg.hasChanges && (
+                  <button
+                    onClick={() => implementChange(msg.html!, msg.content)}
+                    className="mt-2 text-sm text-blue-600 underline"
+                  >
+                    Implementeer wijzigingen
+                  </button>
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
 
-        if not version.data:
-            return JSONResponse(status_code=404, content={"error": "Versie niet gevonden"})
+        <div className="mt-4 flex items-center gap-2">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                handleSubmit()
+              }
+            }}
+            className="flex-grow bg-zinc-800 p-3 rounded text-white resize-none placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+            placeholder="Typ hier je prompt..."
+          />
+          <button
+            onClick={handleSubmit}
+            className="bg-green-600 hover:bg-green-500 px-4 py-2 text-sm rounded-full font-medium"
+          >
+            Stuur
+          </button>
+        </div>
 
-        html_to_publish = version.data["html_preview"]
+        <div className="mt-4">
+          <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
+          <ul className="space-y-1 max-h-[150px] overflow-auto">
+            {versions.map((v) => (
+              <li
+                key={v.id}
+                className={`cursor-pointer px-3 py-2 rounded transition ${v.timestamp === versionId ? "bg-zinc-700" : "hover:bg-zinc-700"}`}
+                onClick={() => selectVersion(v)}
+              >
+                <time dateTime={v.timestamp} className="block text-xs text-zinc-500">
+                  {new Date(v.timestamp).toLocaleString()}
+                </time>
+                <p className="truncate text-sm">{v.prompt}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </aside>
 
-        supabase.table("versions") \
-            .update({"html_live": html_to_publish}) \
-            .eq("id", req.version_id) \
-            .execute()
+      <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-extrabold">Chat + Project Preview</h1>
+          <button
+            onClick={() => setShowLiveProject(!showLiveProject)}
+            className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
+          >
+            {showLiveProject ? "Toon preview" : "Toon live"}
+          </button>
+        </div>
 
-        return {"message": "Live versie succesvol gepubliceerd."}
+        {!showLiveProject && (
+          <div
+            className="w-full h-[85vh] rounded border p-4 overflow-auto"
+            dangerouslySetInnerHTML={{ __html: htmlPreview }}
+          />
+        )}
 
-    except Exception as e:
-        print("❌ ERROR in /publish:", str(e), file=sys.stderr)
-        return JSONResponse(status_code=500, content={"error": "Publicatie mislukt"})
-
-
-# ✅ POST /init
-@app.post("/init")
-async def init_html(req: InitRequest):
-    try:
-        html = validate_and_fix_html(req.html)
-        timestamp = datetime.now(timezone.utc).isoformat(timespec="microseconds")
-        supabase.table("versions").insert({
-            "prompt": "init",
-            "html_preview": html,
-            "page_route": req.page_route,
-            "timestamp": timestamp,
-            "supabase_instructions": json.dumps({"message": "Initiale HTML toegevoegd"}),
-        }).execute()
-        return {"message": "HTML preview succesvol opgeslagen als startpunt."}
-    except Exception as e:
-        print("❌ ERROR in /init:", str(e), file=sys.stderr)
-        return JSONResponse(status_code=500, content={"error": "Initialisatie mislukt"})
-
-
-# ✅ GET /preview/{page_route}
-@app.get("/preview/{page_route}")
-async def get_html_preview(page_route: str):
-    try:
-        result = supabase.table("versions") \
-                         .select("html_preview") \
-                         .eq("page_route", page_route) \
-                         .order("timestamp", desc=True) \
-                         .limit(1) \
-                         .execute()
-
-        if not result.data or not result.data[0].get("html_preview"):
-            return JSONResponse(status_code=404, content={"error": "Geen preview-versie gevonden."})
-
-        return {"html": result.data[0]["html_preview"]}
-
-    except Exception as e:
-        print("❌ ERROR in /preview route:", str(e), file=sys.stderr)
-        return JSONResponse(status_code=500, content={"error": "Interne fout bij ophalen preview."})
+        {showLiveProject && (
+          <iframe
+            src="https://meester.app"
+            title="Live Supabase Project"
+            className="w-full h-[85vh] rounded shadow-inner border"
+          />
+        )}
+      </main>
+    </div>
+  )
+}
