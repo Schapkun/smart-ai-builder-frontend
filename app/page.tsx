@@ -36,11 +36,20 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setCurrentPageRoute(window.location.pathname)
-    }
-  }, [])
+      const route = window.location.pathname
+      setCurrentPageRoute(route)
 
-  useEffect(() => {
+      fetch(`https://smart-ai-builder-backend.onrender.com/preview/${encodeURIComponent(route)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.html) {
+            setHtmlPreview(data.html)
+            setShowLiveProject(false)
+          }
+        })
+        .catch(err => console.error("Fout bij ophalen preview:", err))
+    }
+
     fetchVersions()
   }, [])
 
@@ -64,10 +73,6 @@ export default function Home() {
       return
     }
     setVersions(data || [])
-
-    if (data && data[0]) {
-      setHtmlPreview(data[0].html_preview)
-    }
   }
 
   async function handleSubmit() {
