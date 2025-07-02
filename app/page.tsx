@@ -7,6 +7,7 @@ import { RefreshCcw, Upload } from "lucide-react"
 interface Version {
   id: string
   prompt: string
+  page_route?: string
   html_preview: string
   html_live: string
   timestamp: string
@@ -30,6 +31,9 @@ export default function Home() {
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+
+  // Voeg hier de page route toe; dit is voorbeeldwaarde, pas aan afhankelijk van jouw routing
+  const currentPageRoute = window.location.pathname
 
   useEffect(() => {
     fetchVersions()
@@ -74,7 +78,10 @@ export default function Home() {
       const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userInput }),
+        body: JSON.stringify({
+          prompt: userInput,
+          page_route: currentPageRoute,  // page_route meesturen
+        }),
       })
 
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
@@ -106,6 +113,7 @@ export default function Home() {
         html_preview: html,
         timestamp,
         supabase_instructions: { bron: "chat-implementatie" },
+        page_route: currentPageRoute,  // zorg dat page_route ook hier meegegeven wordt
       },
     ])
 
