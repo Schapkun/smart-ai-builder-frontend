@@ -16,6 +16,7 @@ interface ChatMessage {
   role: "user" | "ai"
   content: string
   html?: string
+  explanation?: string
 }
 
 export default function Home() {
@@ -59,6 +60,11 @@ export default function Home() {
   }
 
   async function handleSubmit() {
+    if (!prompt.trim()) return
+
+    const userMsg: ChatMessage = { role: "user", content: prompt }
+    setChatHistory((prev) => [...prev, userMsg])
+
     try {
       const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
         method: "POST",
@@ -68,14 +74,13 @@ export default function Home() {
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
 
-      const userMsg: ChatMessage = { role: "user", content: prompt }
-      const aiText = data.instructions?.message || `Ik heb een wijziging voorbereid op basis van je prompt: "${prompt}".`
       const aiMsg: ChatMessage = {
         role: "ai",
-        content: aiText,
-        html: data.html || ""
+        content: data.instructions?.message || "Voorstel klaar.",
+        html: data.html || "",
+        explanation: data.instructions?.explanation || "Geen uitleg beschikbaar."
       }
-      setChatHistory((prev) => [...prev, userMsg, aiMsg])
+      setChatHistory((prev) => [...prev, aiMsg])
       setPrompt("")
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
@@ -146,37 +151,45 @@ export default function Home() {
     setShowLiveProject(false)
   }
 
+  function handleKeyPress(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit()
+    }
+  }
+
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
+        <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
+
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchVersions}
-              className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full"
-            >
-              <RefreshCcw size={18} />
-            </button>
-            <button
-              disabled={!versionId || loadingPublish}
-              onClick={publishLive}
-              className="bg-blue-600 hover:bg-blue-500 px-3 py-2 text-xs rounded-full flex items-center gap-1 disabled:opacity-50"
-            >
-              <Upload size={14} />
-            </button>
-          </div>
+          <button
+            onClick={fetchVersions}
+            className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full"
+          >
+            <RefreshCcw size={18} />
+          </button>
+          <button
+            disabled={!versionId || loadingPublish}
+            onClick={publishLive}
+            className="bg-blue-600 hover:bg-blue-500 px-3 py-2 text-xs rounded-full flex items-center gap-1 disabled:opacity-50"
+          >
+            <Upload size={14} /> Publiceer live
+          </button>
         </div>
 
         <div className="flex-1 overflow-auto">
-          <div className="flex flex-col-reverse gap-2">
-            <div ref={messagesEndRef} />
+          <div className="flex flex-col gap-2">
             {chatHistory.map((msg, idx) => (
               <div
                 key={idx}
                 className={`p-3 rounded-lg max-w-[95%] ${msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"}`}
               >
                 <div className="whitespace-pre-line">{msg.content}</div>
+                {msg.role === "ai" && msg.explanation && (
+                  <div className="text-xs text-zinc-600 mt-1 italic">{msg.explanation}</div>
+                )}
                 {msg.role === "ai" && msg.html && (
                   <button
                     onClick={() => implementChange(msg.html!)}
@@ -187,6 +200,7 @@ export default function Home() {
                 )}
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
         </div>
 
@@ -194,6 +208,7 @@ export default function Home() {
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyPress}
             className="flex-grow bg-zinc-800 p-3 rounded text-white resize-none placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
             placeholder="Typ hier je prompt..."
           />
