@@ -39,7 +39,7 @@ export default function Home() {
       const route = window.location.pathname
       setCurrentPageRoute(route)
 
-      fetch(`https://smart-ai-builder-backend.onrender.com/preview/${encodeURIComponent(route)}`)
+      fetch(`https://smart-ai-builder-backend.onrender.com/preview${route}`)
         .then(res => res.json())
         .then(data => {
           if (data.html) {
