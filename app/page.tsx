@@ -18,6 +18,7 @@ interface ChatMessage {
   html?: string
   explanation?: string
   hasChanges?: boolean
+  loading?: boolean
 }
 
 export default function Home() {
@@ -66,29 +67,31 @@ export default function Home() {
   }
 
   async function handleSubmit() {
+    const userInput = prompt
+    const userMsg: ChatMessage = { role: "user", content: userInput }
+    const loadingMsg: ChatMessage = { role: "ai", content: "...", loading: true }
+    setChatHistory((prev) => [...prev, userMsg, loadingMsg])
+    setPrompt("")
+
     try {
       const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt: userInput }),
       })
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
 
-      const userMsg: ChatMessage = { role: "user", content: prompt }
-      const aiText = data.instructions?.message || "Ik heb je prompt ontvangen."
-
-      const changeRequested = isChangeRequest(prompt)
+      const changeRequested = isChangeRequest(userInput)
       const aiMsg: ChatMessage = {
         role: "ai",
-        content: aiText,
+        content: data.instructions?.message || "Ik heb je prompt ontvangen.",
         html: changeRequested ? data.html || "" : undefined,
         explanation: changeRequested ? data.instructions?.explanation || "Geen uitleg beschikbaar." : undefined,
         hasChanges: changeRequested && !!data.html
       }
 
-      setChatHistory((prev) => [...prev, userMsg, aiMsg])
-      setPrompt("")
+      setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
@@ -188,6 +191,9 @@ export default function Home() {
                 className={`p-3 rounded-lg max-w-[95%] ${msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"}`}
               >
                 <div className="whitespace-pre-line">{msg.content}</div>
+                {msg.role === "ai" && msg.loading && (
+                  <div className="text-xs text-zinc-500 mt-1 italic animate-pulse">AI is aan het typen...</div>
+                )}
                 {msg.role === "ai" && msg.explanation && (
                   <div className="text-xs text-zinc-600 mt-1 italic">{msg.explanation}</div>
                 )}
