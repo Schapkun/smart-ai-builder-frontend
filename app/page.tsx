@@ -32,23 +32,18 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-  const [currentPageRoute, setCurrentPageRoute] = useState("")
+  const [currentPageRoute, setCurrentPageRoute] = useState("homepage") // <-- Hardcoded route name om consistentie te garanderen
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const route = window.location.pathname
-      setCurrentPageRoute(route)
-
-      fetch(`https://smart-ai-builder-backend.onrender.com/preview${route}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.html) {
-            setHtmlPreview(data.html)
-            setShowLiveProject(false)
-          }
-        })
-        .catch(err => console.error("Fout bij ophalen preview:", err))
-    }
+    fetch(`https://smart-ai-builder-backend.onrender.com/preview/${currentPageRoute}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.html) {
+          setHtmlPreview(data.html)
+          setShowLiveProject(false)
+        }
+      })
+      .catch(err => console.error("Fout bij ophalen preview:", err))
 
     fetchVersions()
   }, [])
