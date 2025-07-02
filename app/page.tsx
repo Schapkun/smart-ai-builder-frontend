@@ -32,7 +32,7 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-  const [currentPageRoute, setCurrentPageRoute] = useState("homepage") // <-- Hardcoded route name om consistentie te garanderen
+  const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
 
   useEffect(() => {
     fetch(`https://smart-ai-builder-backend.onrender.com/preview/${currentPageRoute}`)
@@ -256,7 +256,7 @@ export default function Home() {
                 onClick={() => selectVersion(v)}
               >
                 <time dateTime={v.timestamp} className="block text-xs text-zinc-500">
-                  {new Date(v.timestamp).toLocaleString()}
+                  {new Date(v.timestamp).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
                 </time>
                 <p className="truncate text-sm">{v.prompt}</p>
               </li>
