@@ -14,6 +14,7 @@ interface Version {
 interface ChatMessage {
   role: "user" | "ai"
   content: string
+  html?: string
 }
 
 export default function Home() {
@@ -54,29 +55,38 @@ export default function Home() {
       const data = await res.json()
 
       const userMsg: ChatMessage = { role: "user", content: prompt }
-      const aiMsg: ChatMessage = { role: "ai", content: data.html || "Geen antwoord ontvangen" }
+      const aiResponseText = data.message || ""
+      const aiHtml = data.html || ""
+
+      const aiMsg: ChatMessage = {
+        role: "ai",
+        content: aiResponseText,
+        ...(aiHtml && { html: aiHtml })
+      }
+
       setChatHistory((prev) => [...prev, userMsg, aiMsg])
       setPrompt("")
 
-      const safeTimestamp = data.version_timestamp || new Date().toISOString()
-      const safeInstructions =
-        typeof data.supabase_instructions === "string"
-          ? JSON.parse(data.supabase_instructions)
-          : data.supabase_instructions || {}
+      if (aiHtml) {
+        const safeTimestamp = data.version_timestamp || new Date().toISOString()
+        const safeInstructions =
+          typeof data.supabase_instructions === "string"
+            ? JSON.parse(data.supabase_instructions)
+            : data.supabase_instructions || {}
 
-      setVersionId(safeTimestamp)
-      setShowLiveProject(false)
+        setVersionId(safeTimestamp)
 
-      await supabase.from("versions").insert([
-        {
-          prompt,
-          html_preview: data.html || "<div>Geen HTML gegenereerd</div>",
-          timestamp: safeTimestamp,
-          supabase_instructions: safeInstructions,
-        },
-      ])
+        await supabase.from("versions").insert([
+          {
+            prompt,
+            html_preview: aiHtml,
+            timestamp: safeTimestamp,
+            supabase_instructions: safeInstructions,
+          },
+        ])
 
-      fetchVersions()
+        fetchVersions()
+      }
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
@@ -142,13 +152,13 @@ export default function Home() {
         <label htmlFor="prompt" className="font-semibold">Prompt</label>
         <textarea
           id="prompt"
-          className="flex-grow bg-zinc-800 p-4 rounded resize-none text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="bg-zinc-800 p-4 rounded resize-none text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
           placeholder="Typ hier je prompt..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
         <button
-          className="mt-4 bg-green-600 hover:bg-green-500 px-6 py-3 rounded text-lg font-semibold transition"
+          className="mt-2 bg-green-600 hover:bg-green-500 px-6 py-3 rounded text-lg font-semibold transition"
           onClick={handleSubmit}
         >
           Execute
@@ -157,12 +167,34 @@ export default function Home() {
         <button
           disabled={!versionId || loadingPublish}
           onClick={publishLive}
-          className={`mt-4 px-6 py-3 rounded text-lg font-semibold transition ${versionId && !loadingPublish ? 'bg-blue-600 hover:bg-blue-500' : 'bg-zinc-700 cursor-not-allowed'}`}
+          className={`mt-2 px-6 py-3 rounded text-lg font-semibold transition ${versionId && !loadingPublish ? 'bg-blue-600 hover:bg-blue-500' : 'bg-zinc-700 cursor-not-allowed'}`}
         >
           {loadingPublish ? "Publiceren..." : "Publiceer live"}
         </button>
 
-        <div>
+        <div className="mt-4">
+          <h2 className="font-semibold text-sm text-zinc-400 mb-2">Chat</h2>
+          <div className="space-y-2 max-h-[300px] overflow-auto">
+            {chatHistory.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-lg ${msg.role === "user" ? "bg-green-600 text-white" : "bg-zinc-700 text-white"}`}
+              >
+                <p className="whitespace-pre-line">{msg.content}</p>
+                {msg.role === "ai" && msg.html && (
+                  <button
+                    onClick={() => implementChange(msg.html!)}
+                    className="mt-2 text-sm text-blue-400 underline"
+                  >
+                    Implementeer wijzigingen
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6">
           <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
           <ul className="space-y-1 max-h-[220px] overflow-auto">
             {versions.map((v) => (
@@ -183,7 +215,7 @@ export default function Home() {
 
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-extrabold">AI Chat + Preview</h1>
+          <h1 className="text-3xl font-extrabold">Live Project Preview</h1>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
@@ -192,24 +224,18 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-4 h-[75vh] overflow-auto">
-          {chatHistory.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`p-4 rounded-lg max-w-[75%] ${msg.role === "user" ? "self-end bg-green-100" : "self-start bg-gray-100"}`}
-            >
-              <div className="whitespace-pre-line">{msg.content}</div>
-              {msg.role === "ai" && (
-                <button
-                  onClick={() => implementChange(msg.content)}
-                  className="mt-2 text-sm text-blue-600 underline"
-                >
-                  Implementeer wijzigingen
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+        {showLiveProject ? (
+          <iframe
+            src="https://meester.app"
+            title="Live Supabase Project"
+            className="w-full h-[85vh] rounded shadow-inner border"
+          />
+        ) : (
+          <div
+            className="w-full h-[85vh] rounded border p-4 overflow-auto"
+            dangerouslySetInnerHTML={{ __html: htmlPreview }}
+          />
+        )}
       </main>
     </div>
   )
