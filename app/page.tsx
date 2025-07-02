@@ -61,11 +61,6 @@ export default function Home() {
     }
   }
 
-  function isChangeRequest(text: string): boolean {
-    const keywords = ["verander", "pas aan", "wijzig", "maak de achtergrond", "vervang", "toevoegen", "verwijder"]
-    return keywords.some(kw => text.toLowerCase().includes(kw))
-  }
-
   async function handleSubmit() {
     if (prompt.trim() === "") return
 
@@ -81,18 +76,17 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: userInput }),
       })
+
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
 
-      const instructions = JSON.parse(data.supabase_instructions || "{}")
-      const changeRequested = isChangeRequest(userInput)
-
+      const instructions = data.instructions || {}
       const aiMsg: ChatMessage = {
         role: "ai",
         content: instructions.message || "Ik heb je prompt ontvangen.",
-        html: changeRequested ? data.html || "" : undefined,
-        explanation: changeRequested ? instructions.explanation || "Geen uitleg beschikbaar." : undefined,
-        hasChanges: changeRequested && !!data.html
+        html: data.html || undefined,
+        explanation: instructions.message || undefined,
+        hasChanges: !!data.html
       }
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
