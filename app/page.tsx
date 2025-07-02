@@ -144,7 +144,7 @@ export default function Home() {
         <label htmlFor="prompt" className="font-semibold">Prompt</label>
         <textarea
           id="prompt"
-          className="flex-grow bg-zinc-800 p-4 rounded resize-none text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="bg-zinc-800 p-4 rounded resize-none text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
           placeholder="Typ hier je prompt..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -163,6 +163,25 @@ export default function Home() {
         >
           {loadingPublish ? "Publiceren..." : "Publiceer live"}
         </button>
+
+        <div className="flex flex-col gap-2 overflow-auto max-h-96">
+          {chatHistory.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`p-3 rounded text-sm ${msg.role === "user" ? "bg-green-700 text-white self-end" : "bg-zinc-700 text-white self-start"}`}
+            >
+              {msg.content}
+              {msg.role === "ai" && msg.html && (
+                <button
+                  onClick={() => implementChange(msg.html!)}
+                  className="block mt-1 text-xs underline text-blue-400"
+                >
+                  Implementeer wijzigingen
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
 
         <div>
           <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
@@ -192,25 +211,6 @@ export default function Home() {
           >
             {showLiveProject ? "Toon preview" : "Toon live"}
           </button>
-        </div>
-
-        <div className="flex flex-col gap-4 h-[75vh] overflow-auto">
-          {chatHistory.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`p-4 rounded-lg max-w-[75%] ${msg.role === "user" ? "self-end bg-green-100" : "self-start bg-gray-100"}`}
-            >
-              <div className="whitespace-pre-line">{msg.content}</div>
-              {msg.role === "ai" && msg.html && (
-                <button
-                  onClick={() => implementChange(msg.html!)}
-                  className="mt-2 text-sm text-blue-600 underline"
-                >
-                  Implementeer wijzigingen
-                </button>
-              )}
-            </div>
-          ))}
         </div>
 
         {!showLiveProject && (
