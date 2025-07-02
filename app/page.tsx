@@ -17,6 +17,7 @@ interface ChatMessage {
   content: string
   html?: string
   explanation?: string
+  hasChanges?: boolean
 }
 
 export default function Home() {
@@ -59,6 +60,11 @@ export default function Home() {
     }
   }
 
+  function isChangeRequest(text: string): boolean {
+    const keywords = ["verander", "pas aan", "wijzig", "maak de achtergrond", "vervang", "toevoegen", "verwijder"]
+    return keywords.some(kw => text.toLowerCase().includes(kw))
+  }
+
   async function handleSubmit() {
     try {
       const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
@@ -72,11 +78,13 @@ export default function Home() {
       const userMsg: ChatMessage = { role: "user", content: prompt }
       const aiText = data.instructions?.message || "Ik heb je prompt ontvangen."
 
+      const changeRequested = isChangeRequest(prompt)
       const aiMsg: ChatMessage = {
         role: "ai",
         content: aiText,
-        html: data.html || "",
-        explanation: data.instructions?.explanation || ""
+        html: changeRequested ? data.html || "" : undefined,
+        explanation: changeRequested ? data.instructions?.explanation || "Geen uitleg beschikbaar." : undefined,
+        hasChanges: changeRequested && !!data.html
       }
 
       setChatHistory((prev) => [...prev, userMsg, aiMsg])
@@ -183,7 +191,7 @@ export default function Home() {
                 {msg.role === "ai" && msg.explanation && (
                   <div className="text-xs text-zinc-600 mt-1 italic">{msg.explanation}</div>
                 )}
-                {msg.role === "ai" && msg.html && (
+                {msg.role === "ai" && msg.hasChanges && (
                   <button
                     onClick={() => implementChange(msg.html!)}
                     className="mt-2 text-sm text-blue-600 underline"
