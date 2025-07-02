@@ -84,12 +84,14 @@ export default function Home() {
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
 
+      const instructions = JSON.parse(data.supabase_instructions || "{}")
       const changeRequested = isChangeRequest(userInput)
+
       const aiMsg: ChatMessage = {
         role: "ai",
-        content: data.instructions?.message || "Ik heb je prompt ontvangen.",
+        content: instructions.message || "Ik heb je prompt ontvangen.",
         html: changeRequested ? data.html || "" : undefined,
-        explanation: changeRequested ? data.instructions?.explanation || "Geen uitleg beschikbaar." : undefined,
+        explanation: changeRequested ? instructions.explanation || "Geen uitleg beschikbaar." : undefined,
         hasChanges: changeRequested && !!data.html
       }
 
@@ -99,14 +101,14 @@ export default function Home() {
     }
   }
 
-  async function implementChange(html: string) {
+  async function implementChange(html: string, originalPrompt: string) {
     const timestamp = new Date().toISOString()
     setHtmlPreview(html)
     setShowLiveProject(false)
 
     const { error } = await supabase.from("versions").insert([
       {
-        prompt,
+        prompt: originalPrompt,
         html_preview: html,
         timestamp,
         supabase_instructions: { bron: "chat-implementatie" },
@@ -201,7 +203,7 @@ export default function Home() {
                 )}
                 {msg.role === "ai" && msg.hasChanges && (
                   <button
-                    onClick={() => implementChange(msg.html!)}
+                    onClick={() => implementChange(msg.html!, msg.content)}
                     className="mt-2 text-sm text-blue-600 underline"
                   >
                     Implementeer wijzigingen
