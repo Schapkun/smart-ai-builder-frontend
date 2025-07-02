@@ -32,8 +32,14 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-  // Voeg hier de page route toe; dit is voorbeeldwaarde, pas aan afhankelijk van jouw routing
-  const currentPageRoute = window.location.pathname
+  // State voor huidige pagina route, lezen op client-side
+  const [currentPageRoute, setCurrentPageRoute] = useState("")
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentPageRoute(window.location.pathname)
+    }
+  }, [])
 
   useEffect(() => {
     fetchVersions()
@@ -80,7 +86,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: userInput,
-          page_route: currentPageRoute,  // page_route meesturen
+          page_route: currentPageRoute,
         }),
       })
 
@@ -93,7 +99,7 @@ export default function Home() {
         content: instructions.message || "Ik heb je prompt ontvangen.",
         html: data.html || undefined,
         explanation: instructions.message || undefined,
-        hasChanges: !!data.html
+        hasChanges: !!data.html,
       }
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
@@ -113,7 +119,7 @@ export default function Home() {
         html_preview: html,
         timestamp,
         supabase_instructions: { bron: "chat-implementatie" },
-        page_route: currentPageRoute,  // zorg dat page_route ook hier meegegeven wordt
+        page_route: currentPageRoute, // nu ook meegegeven
       },
     ])
 
@@ -194,7 +200,9 @@ export default function Home() {
             {chatHistory.map((msg, idx) => (
               <div
                 key={idx}
-                className={`p-3 rounded-lg max-w-[95%] ${msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"}`}
+                className={`p-3 rounded-lg max-w-[95%] ${
+                  msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"
+                }`}
               >
                 <div className="whitespace-pre-line">{msg.content}</div>
                 {msg.role === "ai" && msg.loading && (
