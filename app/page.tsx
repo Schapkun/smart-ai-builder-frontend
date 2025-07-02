@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { supabase } from "../lib/supabaseClient"
+import { RefreshCcw, Upload } from "lucide-react"
 
 interface Version {
   id: string
@@ -14,7 +15,7 @@ interface Version {
 interface ChatMessage {
   role: "user" | "ai"
   content: string
-  html?: string // alleen aanwezig bij AI-antwoorden met wijzigingen
+  html?: string
 }
 
 export default function Home() {
@@ -25,10 +26,19 @@ export default function Home() {
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     fetchVersions()
   }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [chatHistory])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
   async function fetchVersions() {
     const { data, error } = await supabase
@@ -59,7 +69,7 @@ export default function Home() {
       const data = await res.json()
 
       const userMsg: ChatMessage = { role: "user", content: prompt }
-      const aiText = data.instructions?.message || "Ik heb een wijziging voorbereid."
+      const aiText = data.instructions?.message || `Ik heb een wijziging voorbereid op basis van je prompt: "${prompt}".`
       const aiMsg: ChatMessage = {
         role: "ai",
         content: aiText,
@@ -82,7 +92,7 @@ export default function Home() {
         prompt,
         html_preview: html,
         timestamp,
-        supabase_instructions: { source: "chat-implementatie" },
+        supabase_instructions: { bron: "chat-implementatie" },
       },
     ])
 
@@ -139,53 +149,64 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
-        <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
+        <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
 
-        <label htmlFor="prompt" className="font-semibold">Prompt</label>
-        <textarea
-          id="prompt"
-          className="bg-zinc-800 p-4 rounded resize-none text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-          placeholder="Typ hier je prompt..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
-        <button
-          className="mt-4 bg-green-600 hover:bg-green-500 px-6 py-3 rounded text-lg font-semibold transition"
-          onClick={handleSubmit}
-        >
-          Stuur naar AI
-        </button>
-
-        <button
-          disabled={!versionId || loadingPublish}
-          onClick={publishLive}
-          className={`mt-4 px-6 py-3 rounded text-lg font-semibold transition ${versionId && !loadingPublish ? 'bg-blue-600 hover:bg-blue-500' : 'bg-zinc-700 cursor-not-allowed'}`}
-        >
-          {loadingPublish ? "Publiceren..." : "Publiceer live"}
-        </button>
-
-        <div className="flex flex-col gap-2 overflow-auto max-h-96">
-          {chatHistory.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`p-3 rounded text-sm ${msg.role === "user" ? "bg-green-700 text-white self-end" : "bg-zinc-700 text-white self-start"}`}
-            >
-              {msg.content}
-              {msg.role === "ai" && msg.html && (
-                <button
-                  onClick={() => implementChange(msg.html!)}
-                  className="block mt-1 text-xs underline text-blue-400"
-                >
-                  Implementeer wijzigingen
-                </button>
-              )}
-            </div>
-          ))}
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={fetchVersions}
+            className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full"
+          >
+            <RefreshCcw size={18} />
+          </button>
+          <button
+            disabled={!versionId || loadingPublish}
+            onClick={publishLive}
+            className="bg-blue-600 hover:bg-blue-500 px-3 py-2 text-xs rounded-full flex items-center gap-1 disabled:opacity-50"
+          >
+            <Upload size={14} /> Publiceer live
+          </button>
         </div>
 
-        <div>
+        <div className="flex-1 overflow-auto">
+          <div className="flex flex-col gap-2">
+            {chatHistory.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-lg max-w-[95%] ${msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"}`}
+              >
+                <div className="whitespace-pre-line">{msg.content}</div>
+                {msg.role === "ai" && msg.html && (
+                  <button
+                    onClick={() => implementChange(msg.html!)}
+                    className="mt-2 text-sm text-blue-600 underline"
+                  >
+                    Implementeer wijzigingen
+                  </button>
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className="flex-grow bg-zinc-800 p-3 rounded text-white resize-none placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+            placeholder="Typ hier je prompt..."
+          />
+          <button
+            onClick={handleSubmit}
+            className="bg-green-600 hover:bg-green-500 px-4 py-2 text-sm rounded-full font-medium"
+          >
+            Stuur
+          </button>
+        </div>
+
+        <div className="mt-4">
           <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
-          <ul className="space-y-1 max-h-[220px] overflow-auto">
+          <ul className="space-y-1 max-h-[150px] overflow-auto">
             {versions.map((v) => (
               <li
                 key={v.id}
@@ -215,7 +236,7 @@ export default function Home() {
 
         {!showLiveProject && (
           <div
-            className="w-full h-[85vh] rounded border p-4 overflow-auto mt-4"
+            className="w-full h-[85vh] rounded border p-4 overflow-auto"
             dangerouslySetInnerHTML={{ __html: htmlPreview }}
           />
         )}
