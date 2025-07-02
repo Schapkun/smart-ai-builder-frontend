@@ -86,7 +86,7 @@ export default function Home() {
         body: JSON.stringify({
           prompt: userInput,
           page_route: currentPageRoute,
-          chat_history: chatHistory,
+          chat_history: [...chatHistory, userMsg],
         }),
       })
 
