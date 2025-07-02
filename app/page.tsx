@@ -149,26 +149,28 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
-        <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
-
         <div className="flex justify-between items-center mb-4">
-          <button
-            onClick={fetchVersions}
-            className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full"
-          >
-            <RefreshCcw size={18} />
-          </button>
-          <button
-            disabled={!versionId || loadingPublish}
-            onClick={publishLive}
-            className="bg-blue-600 hover:bg-blue-500 px-3 py-2 text-xs rounded-full flex items-center gap-1 disabled:opacity-50"
-          >
-            <Upload size={14} /> Publiceer live
-          </button>
+          <h1 className="text-3xl font-extrabold">Loveable Clone</h1>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchVersions}
+              className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full"
+            >
+              <RefreshCcw size={18} />
+            </button>
+            <button
+              disabled={!versionId || loadingPublish}
+              onClick={publishLive}
+              className="bg-blue-600 hover:bg-blue-500 px-3 py-2 text-xs rounded-full flex items-center gap-1 disabled:opacity-50"
+            >
+              <Upload size={14} />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col-reverse gap-2">
+            <div ref={messagesEndRef} />
             {chatHistory.map((msg, idx) => (
               <div
                 key={idx}
@@ -185,7 +187,6 @@ export default function Home() {
                 )}
               </div>
             ))}
-            <div ref={messagesEndRef} />
           </div>
         </div>
 
