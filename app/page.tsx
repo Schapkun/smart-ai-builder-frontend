@@ -11,6 +11,11 @@ interface Version {
   timestamp: string
 }
 
+interface ChatMessage {
+  role: "user" | "ai"
+  content: string
+}
+
 export default function Home() {
   const [prompt, setPrompt] = useState("")
   const [versionId, setVersionId] = useState<string | null>(null)
@@ -18,6 +23,7 @@ export default function Home() {
   const [htmlPreview, setHtmlPreview] = useState("")
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
 
   useEffect(() => {
     fetchVersions()
@@ -47,27 +53,24 @@ export default function Home() {
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
 
-      setHtmlPreview(data.html || "")
-      setVersionId(data.version_timestamp || null)
-      setShowLiveProject(false)
+      const userMsg: ChatMessage = { role: "user", content: prompt }
+      const aiMsg: ChatMessage = { role: "ai", content: data.html || "Geen antwoord ontvangen" }
+      setChatHistory((prev) => [...prev, userMsg, aiMsg])
+      setPrompt("")
 
-      const safeHtml = data.html || "<div>Geen HTML gegenereerd</div>"
       const safeTimestamp = data.version_timestamp || new Date().toISOString()
+      const safeInstructions =
+        typeof data.supabase_instructions === "string"
+          ? JSON.parse(data.supabase_instructions)
+          : data.supabase_instructions || {}
 
-      let safeInstructions = {}
-      try {
-        safeInstructions =
-          typeof data.supabase_instructions === "string"
-            ? JSON.parse(data.supabase_instructions)
-            : data.supabase_instructions || {}
-      } catch (e) {
-        safeInstructions = {}
-      }
+      setVersionId(safeTimestamp)
+      setShowLiveProject(false)
 
       await supabase.from("versions").insert([
         {
           prompt,
-          html_preview: safeHtml,
+          html_preview: data.html || "<div>Geen HTML gegenereerd</div>",
           timestamp: safeTimestamp,
           supabase_instructions: safeInstructions,
         },
@@ -77,6 +80,11 @@ export default function Home() {
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
+  }
+
+  async function implementChange(html: string) {
+    setHtmlPreview(html)
+    setShowLiveProject(false)
   }
 
   async function publishLive() {
@@ -175,7 +183,7 @@ export default function Home() {
 
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-extrabold">Live Project Preview</h1>
+          <h1 className="text-3xl font-extrabold">AI Chat + Preview</h1>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
@@ -184,18 +192,24 @@ export default function Home() {
           </button>
         </div>
 
-        {showLiveProject ? (
-          <iframe
-            src="https://meester.app"
-            title="Live Supabase Project"
-            className="w-full h-[85vh] rounded shadow-inner border"
-          />
-        ) : (
-          <div
-            className="w-full h-[85vh] rounded border p-4 overflow-auto"
-            dangerouslySetInnerHTML={{ __html: htmlPreview }}
-          />
-        )}
+        <div className="flex flex-col gap-4 h-[75vh] overflow-auto">
+          {chatHistory.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`p-4 rounded-lg max-w-[75%] ${msg.role === "user" ? "self-end bg-green-100" : "self-start bg-gray-100"}`}
+            >
+              <div className="whitespace-pre-line">{msg.content}</div>
+              {msg.role === "ai" && (
+                <button
+                  onClick={() => implementChange(msg.content)}
+                  className="mt-2 text-sm text-blue-600 underline"
+                >
+                  Implementeer wijzigingen
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </main>
     </div>
   )
