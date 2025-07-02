@@ -67,6 +67,8 @@ export default function Home() {
   }
 
   async function handleSubmit() {
+    if (prompt.trim() === "") return
+
     const userInput = prompt
     const userMsg: ChatMessage = { role: "user", content: userInput }
     const loadingMsg: ChatMessage = { role: "ai", content: "...", loading: true }
@@ -238,7 +240,7 @@ export default function Home() {
             {versions.map((v) => (
               <li
                 key={v.id}
-                className="cursor-pointer px-3 py-2 rounded hover:bg-zinc-700 transition"
+                className={`cursor-pointer px-3 py-2 rounded transition ${v.timestamp === versionId ? "bg-zinc-700" : "hover:bg-zinc-700"}`}
                 onClick={() => selectVersion(v)}
               >
                 <time dateTime={v.timestamp} className="block text-xs text-zinc-500">
