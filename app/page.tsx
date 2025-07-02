@@ -32,7 +32,6 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-  // State voor huidige pagina route, lezen op client-side
   const [currentPageRoute, setCurrentPageRoute] = useState("")
 
   useEffect(() => {
@@ -87,6 +86,7 @@ export default function Home() {
         body: JSON.stringify({
           prompt: userInput,
           page_route: currentPageRoute,
+          chat_history: chatHistory,
         }),
       })
 
@@ -119,7 +119,7 @@ export default function Home() {
         html_preview: html,
         timestamp,
         supabase_instructions: { bron: "chat-implementatie" },
-        page_route: currentPageRoute, // nu ook meegegeven
+        page_route: currentPageRoute,
       },
     ])
 
