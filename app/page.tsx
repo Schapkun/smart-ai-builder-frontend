@@ -101,7 +101,7 @@ export default function Home() {
         loading: false,
       }
 
-      // Sla altijd de chatgeschiedenis op
+      // Log de chatgeschiedenis, maar update de HTML alleen als er daadwerkelijk een nieuwe HTML is
       const timestamp = new Date().toISOString()
       const newVersion = {
         prompt: userInput,
