@@ -279,7 +279,11 @@ export default function Home() {
         </div>
 
         {!showLiveProject ? (
-          <div className="w-full h-[85vh] rounded border p-4 overflow-auto" dangerouslySetInnerHTML={{ __html: htmlPreview }} />
+          <iframe
+            srcDoc={htmlPreview}
+            sandbox="allow-same-origin allow-scripts"
+            className="w-full h-[85vh] rounded border"
+          />
         ) : (
           <iframe
             src="https://meester.app"
