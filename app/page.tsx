@@ -113,7 +113,7 @@ export default function Home() {
       }
 
       // Zet altijd de versie in de database, maar overschrijf de HTML alleen als er daadwerkelijk nieuwe HTML is
-      const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: ["page_route", "timestamp"] })
+      const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: "page_route,timestamp" })
 
       if (error) {
         alert("Fout bij opslaan wijziging: " + error.message)
