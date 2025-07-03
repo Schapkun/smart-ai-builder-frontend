@@ -59,7 +59,7 @@ export default function Home() {
   async function fetchVersions() {
     const { data, error } = await supabase
       .from("versions")
-      .select("*")
+      .select("id, prompt, page_route, html_preview, html_live, timestamp, timestamp_local")
       .order("timestamp", { ascending: false })
       .limit(20)
 
@@ -278,10 +278,12 @@ export default function Home() {
                 <time className="block text-xs text-zinc-500">
                   {new Date(v.timestamp).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
                 </time>
-                {v.timestamp_local && (
+                {v.timestamp_local ? (
                   <time className="block text-xs text-zinc-400 italic">
                     Lokale tijd: {v.timestamp_local}
                   </time>
+                ) : (
+                  <span className="text-xs text-zinc-500 italic">Lokale tijd onbekend</span>
                 )}
                 <p className="truncate text-sm">{v.prompt}</p>
               </li>
