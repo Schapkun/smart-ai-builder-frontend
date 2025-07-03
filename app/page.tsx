@@ -33,12 +33,12 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
+  const [generateMode, setGenerateMode] = useState(false)
 
   useEffect(() => {
     fetch(`https://smart-ai-builder-backend.onrender.com/preview/${currentPageRoute}`)
       .then(res => res.json())
       .then(data => {
-        console.log("🔍 Preview response:", data)
         if (data.html) {
           setHtmlPreview(data.html)
           setShowLiveProject(false)
@@ -90,12 +90,12 @@ export default function Home() {
           prompt: userInput,
           page_route: currentPageRoute,
           chat_history: [...chatHistory, userMsg],
+          chat_mode: !generateMode,
         }),
       })
 
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
-      console.log("🔎 AI-response:", data)
 
       const instructions = data.instructions || {}
       const aiMsg: ChatMessage = {
@@ -108,6 +108,7 @@ export default function Home() {
       }
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
+      setGenerateMode(false)
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
@@ -128,8 +129,6 @@ export default function Home() {
       supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
       page_route: currentPageRoute,
     }
-
-    console.log("🧪 DEBUG - newVersion payload:", newVersion)
 
     setHtmlPreview(html)
     setShowLiveProject(false)
@@ -258,10 +257,10 @@ export default function Home() {
             placeholder="Typ hier je prompt..."
           />
           <button
-            onClick={handleSubmit}
+            onClick={() => setGenerateMode(true)}
             className="bg-green-600 hover:bg-green-500 px-4 py-2 text-sm rounded-full font-medium"
           >
-            Stuur
+            Genereer code
           </button>
         </div>
 
