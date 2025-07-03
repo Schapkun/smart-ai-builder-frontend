@@ -114,21 +114,26 @@ export default function Home() {
   async function implementChange(html: string, originalPrompt: string) {
     console.log("⚡ implementChange AANGEROEPEN")
     const timestamp = new Date().toISOString()
-    const timestamp_local = new Date().toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", hour12: false })
+    const timestamp_local = new Date().toLocaleString("nl-NL", {
+      timeZone: "Europe/Amsterdam",
+      hour12: false,
+    })
+
+    const newVersion = {
+      prompt: originalPrompt,
+      html_preview: html,
+      timestamp,
+      timestamp_local,
+      supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
+      page_route: currentPageRoute,
+    }
+
+    console.log("Wat ik naar Supabase stuur:", newVersion)
 
     setHtmlPreview(html)
     setShowLiveProject(false)
 
-    const { error } = await supabase.from("versions").insert([
-      console.log("Wat ik naar Supabase stuur:", {
-        prompt: originalPrompt,
-        html_preview: html,
-        timestamp,
-        timestamp_local,
-        supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
-        page_route: currentPageRoute,
-      },
-    ])
+    const { error } = await supabase.from("versions").insert([newVersion])
 
     if (!error) {
       fetchVersions()
