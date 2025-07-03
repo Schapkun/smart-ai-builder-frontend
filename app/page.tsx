@@ -31,7 +31,6 @@ export default function Home() {
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
-  const [generateMode, setGenerateMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
 
@@ -50,8 +49,12 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    scrollToBottom()
   }, [chatHistory])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
   async function fetchVersions() {
     const { data, error } = await supabase
@@ -82,7 +85,6 @@ export default function Home() {
           prompt: userInput,
           page_route: currentPageRoute,
           chat_history: [...chatHistory, userMsg],
-          chat_mode: !generateMode, // 🔄 Nieuw veld toegevoegd
         }),
       })
 
@@ -99,12 +101,30 @@ export default function Home() {
         loading: false,
       }
 
+      // Sla altijd de chatgeschiedenis op
+      const timestamp = new Date().toISOString()
+      const newVersion = {
+        prompt: userInput,
+        html_preview: data.html || null,
+        timestamp,
+        timestamp_local: new Date().toLocaleString("sv-SE", { timeZone: "Europe/Amsterdam", hour12: false }),
+        page_route: currentPageRoute,
+        supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
+      }
+
+      // Zet de nieuwe versie in de database, maar overschrijf de html alleen als er echt HTML is
+      const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: ["page_route", "timestamp"] })
+
+      if (error) {
+        alert("Fout bij opslaan wijziging: " + error.message)
+        return
+      }
+
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
+      fetchVersions()
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
-
-    setGenerateMode(false) // 🔄 Reset modus na uitvoeren
   }
 
   async function implementChange(html: string, originalPrompt: string) {
@@ -128,15 +148,22 @@ export default function Home() {
 
     const { error } = await supabase.from("versions").insert([newVersion])
 
-    const feedbackMsg: ChatMessage = {
-      role: "assistant",
-      content: error
-        ? `❌ Fout bij opslaan wijziging: ${error.message}`
-        : "🚀 Wijziging succesvol toegepast.",
-      loading: false,
+    if (!error) {
+      fetchVersions()
+      const successMsg: ChatMessage = {
+        role: "assistant",
+        content: "🚀 Wijziging succesvol toegepast.",
+        loading: false,
+      }
+      setChatHistory((prev) => [...prev, successMsg])
+    } else {
+      const errorMsg: ChatMessage = {
+        role: "assistant",
+        content: `❌ Fout bij opslaan wijziging: ${error.message}`,
+        loading: false,
+      }
+      setChatHistory((prev) => [...prev, errorMsg])
     }
-    setChatHistory((prev) => [...prev, feedbackMsg])
-    if (!error) fetchVersions()
   }
 
   async function publishLive() {
@@ -242,21 +269,11 @@ export default function Home() {
           />
 
           <button
-            onClick={() => setGenerateMode(!generateMode)}
-            className={`px-4 py-2 text-sm rounded-full font-medium transition ${
-              generateMode
-                ? "bg-orange-600 hover:bg-orange-500"
-                : "bg-zinc-600 hover:bg-zinc-500"
-            }`}
+            onClick={handleSubmit}
+            className="bg-green-600 hover:bg-green-500 px-4 py-2 text-sm rounded-full font-medium"
           >
             Genereer code
           </button>
-
-          {generateMode && (
-            <span className="absolute -top-6 right-0 text-xs text-orange-400">
-              Generatie-modus actief
-            </span>
-          )}
         </div>
 
         <div className="mt-4">
