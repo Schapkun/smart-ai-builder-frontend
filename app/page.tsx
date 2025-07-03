@@ -66,7 +66,9 @@ export default function Home() {
       console.error("Fout bij ophalen versies:", error)
       return
     }
-    setVersions(data || [])
+
+    const filtered = (data || []).filter((v) => v.html_preview && v.html_preview.trim() !== "")
+    setVersions(filtered)
   }
 
   async function handleSubmit() {
