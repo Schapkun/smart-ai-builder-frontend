@@ -101,7 +101,7 @@ export default function Home() {
         loading: false,
       }
 
-      // Log de chatgeschiedenis, maar update de HTML alleen als er daadwerkelijk een nieuwe HTML is
+      // Sla altijd de chatgeschiedenis op
       const timestamp = new Date().toISOString()
       const newVersion = {
         prompt: userInput,
@@ -113,11 +113,13 @@ export default function Home() {
       }
 
       // Zet altijd de versie in de database, maar overschrijf de HTML alleen als er daadwerkelijk nieuwe HTML is
-      const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: "page_route,timestamp" })
+      if (data.html !== htmlPreview) {
+        const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: ["page_route", "timestamp"] })
 
-      if (error) {
-        alert("Fout bij opslaan wijziging: " + error.message)
-        return
+        if (error) {
+          alert("Fout bij opslaan wijziging: " + error.message)
+          return
+        }
       }
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
