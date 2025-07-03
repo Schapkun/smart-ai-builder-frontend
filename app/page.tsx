@@ -101,7 +101,7 @@ export default function Home() {
         loading: false,
       }
 
-      // Sla altijd de chatgeschiedenis op
+      // Log de chatgeschiedenis, maar update de HTML alleen als er daadwerkelijk een nieuwe HTML is
       const timestamp = new Date().toISOString()
       const newVersion = {
         prompt: userInput,
@@ -112,7 +112,7 @@ export default function Home() {
         supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
       }
 
-      // Zet de nieuwe versie in de database, maar overschrijf de html alleen als er echt HTML is
+      // Zet altijd de versie in de database, maar overschrijf de HTML alleen als er daadwerkelijk nieuwe HTML is
       const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: ["page_route", "timestamp"] })
 
       if (error) {
