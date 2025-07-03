@@ -31,9 +31,9 @@ export default function Home() {
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
+  const [generateMode, setGenerateMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
-  const [generateMode, setGenerateMode] = useState(false)
 
   useEffect(() => {
     fetch(`https://smart-ai-builder-backend.onrender.com/preview/${currentPageRoute}`)
@@ -50,12 +50,8 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    scrollToBottom()
-  }, [chatHistory])
-
-  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  }, [chatHistory])
 
   async function fetchVersions() {
     const { data, error } = await supabase
@@ -64,12 +60,8 @@ export default function Home() {
       .order("timestamp", { ascending: false })
       .limit(20)
 
-    if (error) {
-      console.error("Fout bij ophalen versies:", error)
-      return
-    }
-
-    const filtered = (data || []).filter((v) => v.html_preview && v.html_preview.trim() !== "")
+    if (error) return console.error("Fout bij ophalen versies:", error)
+    const filtered = (data || []).filter((v) => v.html_preview?.trim())
     setVersions(filtered)
   }
 
@@ -90,7 +82,7 @@ export default function Home() {
           prompt: userInput,
           page_route: currentPageRoute,
           chat_history: [...chatHistory, userMsg],
-          chat_mode: !generateMode,
+          chat_mode: !generateMode, // 🔄 Nieuw veld toegevoegd
         }),
       })
 
@@ -108,10 +100,11 @@ export default function Home() {
       }
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
-      setGenerateMode(false)
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
+
+    setGenerateMode(false) // 🔄 Reset modus na uitvoeren
   }
 
   async function implementChange(html: string, originalPrompt: string) {
@@ -135,31 +128,21 @@ export default function Home() {
 
     const { error } = await supabase.from("versions").insert([newVersion])
 
-    if (!error) {
-      fetchVersions()
-      const successMsg: ChatMessage = {
-        role: "assistant",
-        content: "🚀 Wijziging succesvol toegepast.",
-        loading: false,
-      }
-      setChatHistory((prev) => [...prev, successMsg])
-    } else {
-      const errorMsg: ChatMessage = {
-        role: "assistant",
-        content: `❌ Fout bij opslaan wijziging: ${error.message}`,
-        loading: false,
-      }
-      setChatHistory((prev) => [...prev, errorMsg])
+    const feedbackMsg: ChatMessage = {
+      role: "assistant",
+      content: error
+        ? `❌ Fout bij opslaan wijziging: ${error.message}`
+        : "🚀 Wijziging succesvol toegepast.",
+      loading: false,
     }
+    setChatHistory((prev) => [...prev, feedbackMsg])
+    if (!error) fetchVersions()
   }
 
   async function publishLive() {
-    if (!versionId) {
-      alert("Selecteer eerst een versie om live te zetten.")
-      return
-    }
-
+    if (!versionId) return alert("Selecteer eerst een versie om live te zetten.")
     setLoadingPublish(true)
+
     try {
       const { data, error } = await supabase
         .from("versions")
@@ -169,7 +152,6 @@ export default function Home() {
 
       if (error || !data) {
         alert("Kon versie niet vinden: " + error?.message)
-        setLoadingPublish(false)
         return
       }
 
@@ -190,6 +172,7 @@ export default function Home() {
     } catch (err: any) {
       alert("Fout bij publiceren: " + err.message)
     }
+
     setLoadingPublish(false)
   }
 
@@ -204,6 +187,7 @@ export default function Home() {
     <div className="flex h-screen bg-zinc-900 text-white">
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
+
         <div className="flex justify-between items-center mb-4">
           <button onClick={fetchVersions} className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full">
             <RefreshCcw size={18} />
@@ -243,7 +227,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2 relative">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -256,12 +240,23 @@ export default function Home() {
             className="flex-grow bg-zinc-800 p-3 rounded text-white resize-none placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
             placeholder="Typ hier je prompt..."
           />
+
           <button
-            onClick={() => setGenerateMode(true)}
-            className="bg-green-600 hover:bg-green-500 px-4 py-2 text-sm rounded-full font-medium"
+            onClick={() => setGenerateMode(!generateMode)}
+            className={`px-4 py-2 text-sm rounded-full font-medium transition ${
+              generateMode
+                ? "bg-orange-600 hover:bg-orange-500"
+                : "bg-zinc-600 hover:bg-zinc-500"
+            }`}
           >
             Genereer code
           </button>
+
+          {generateMode && (
+            <span className="absolute -top-6 right-0 text-xs text-orange-400">
+              Generatie-modus actief
+            </span>
+          )}
         </div>
 
         <div className="mt-4">
@@ -278,13 +273,6 @@ export default function Home() {
                 <time className="block text-xs text-zinc-500">
                   {new Date(v.timestamp).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
                 </time>
-                {v.timestamp_local ? (
-                  <time className="block text-xs text-zinc-400 italic">
-                    Lokale tijd: {v.timestamp_local}
-                  </time>
-                ) : (
-                  <span className="text-xs text-zinc-500 italic">Lokale tijd onbekend</span>
-                )}
                 <p className="truncate text-sm">{v.prompt}</p>
               </li>
             ))}
