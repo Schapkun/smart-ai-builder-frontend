@@ -17,7 +17,7 @@ interface Version {
 interface ChatMessage {
   role: "user" | "assistant"
   content: string
-3  html?: string
+  html?: string
   explanation?: string
   hasChanges?: boolean
   loading?: boolean
