@@ -120,7 +120,7 @@ export default function Home() {
     setShowLiveProject(false)
 
     const { error } = await supabase.from("versions").insert([
-      {
+      console.log("Wat ik naar Supabase stuur:", {
         prompt: originalPrompt,
         html_preview: html,
         timestamp,
