@@ -38,6 +38,7 @@ export default function Home() {
     fetch(`https://smart-ai-builder-backend.onrender.com/preview/${currentPageRoute}`)
       .then(res => res.json())
       .then(data => {
+        console.log("🔍 Preview response:", data)
         if (data.html) {
           setHtmlPreview(data.html)
           setShowLiveProject(false)
@@ -94,6 +95,7 @@ export default function Home() {
 
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
+      console.log("🔎 AI-response:", data)
 
       const instructions = data.instructions || {}
       const aiMsg: ChatMessage = {
@@ -126,6 +128,8 @@ export default function Home() {
       supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
       page_route: currentPageRoute,
     }
+
+    console.log("🧪 DEBUG - newVersion payload:", newVersion)
 
     setHtmlPreview(html)
     setShowLiveProject(false)
