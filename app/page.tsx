@@ -113,9 +113,11 @@ export default function Home() {
 
   async function implementChange(html: string, originalPrompt: string) {
     console.log("⚡ implementChange AANGEROEPEN")
+
     const timestamp = new Date().toISOString()
     const timestamp_local = new Date().toLocaleString("sv-SE", {
-      timeZone: "Europe/Amsterdam"
+      timeZone: "Europe/Amsterdam",
+      hour12: false,
     })
 
     const newVersion = {
@@ -127,7 +129,9 @@ export default function Home() {
       page_route: currentPageRoute,
     }
 
-    console.log("Wat ik naar Supabase stuur:", newVersion)
+    console.log("🧪 DEBUG - timestamp:", timestamp)
+    console.log("🧪 DEBUG - timestamp_local:", timestamp_local)
+    console.log("🧪 DEBUG - newVersion payload:", newVersion)
 
     setHtmlPreview(html)
     setShowLiveProject(false)
