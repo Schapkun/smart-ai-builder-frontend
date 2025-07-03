@@ -17,7 +17,7 @@ interface Version {
 interface ChatMessage {
   role: "user" | "assistant"
   content: string
-  html?: string
+3  html?: string
   explanation?: string
   hasChanges?: boolean
   loading?: boolean
@@ -101,7 +101,6 @@ export default function Home() {
         loading: false,
       }
 
-      // Log de chatgeschiedenis, maar update de HTML alleen als er daadwerkelijk een nieuwe HTML is
       const timestamp = new Date().toISOString()
       const newVersion = {
         prompt: userInput,
@@ -112,10 +111,8 @@ export default function Home() {
         supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
       }
 
-      // Zet altijd de versie in de database, maar overschrijf de HTML alleen als er daadwerkelijk nieuwe HTML is
       if (data.html !== htmlPreview) {
-        const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: ["page_route", "timestamp"] })
-
+        const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: "page_route,timestamp" })
         if (error) {
           alert("Fout bij opslaan wijziging: " + error.message)
           return
