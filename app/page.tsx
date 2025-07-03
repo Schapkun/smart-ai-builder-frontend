@@ -11,6 +11,7 @@ interface Version {
   html_preview: string
   html_live: string
   timestamp: string
+  timestamp_local?: string
 }
 
 interface ChatMessage {
@@ -111,8 +112,9 @@ export default function Home() {
   }
 
   async function implementChange(html: string, originalPrompt: string) {
-    console.log("\u26a1 implementChange AANGEROEPEN")
+    console.log("⚡ implementChange AANGEROEPEN")
     const timestamp = new Date().toISOString()
+    const timestamp_local = new Date().toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", hour12: false })
 
     setHtmlPreview(html)
     setShowLiveProject(false)
@@ -122,6 +124,7 @@ export default function Home() {
         prompt: originalPrompt,
         html_preview: html,
         timestamp,
+        timestamp_local,
         supabase_instructions: { bron: "chat-implementatie" },
         page_route: currentPageRoute,
       },
@@ -131,14 +134,14 @@ export default function Home() {
       fetchVersions()
       const successMsg: ChatMessage = {
         role: "assistant",
-        content: "\ud83d\ude80 Wijziging succesvol toegepast.",
+        content: "🚀 Wijziging succesvol toegepast.",
         loading: false,
       }
       setChatHistory((prev) => [...prev, successMsg])
     } else {
       const errorMsg: ChatMessage = {
         role: "assistant",
-        content: `\u274c Fout bij opslaan wijziging: ${error.message}`,
+        content: `❌ Fout bij opslaan wijziging: ${error.message}`,
         loading: false,
       }
       setChatHistory((prev) => [...prev, errorMsg])
@@ -270,6 +273,11 @@ export default function Home() {
                 <time className="block text-xs text-zinc-500">
                   {new Date(v.timestamp).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
                 </time>
+                {v.timestamp_local && (
+                  <time className="block text-xs text-zinc-400 italic">
+                    Lokale tijd: {v.timestamp_local}
+                  </time>
+                )}
                 <p className="truncate text-sm">{v.prompt}</p>
               </li>
             ))}
