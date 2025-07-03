@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import { supabase } from "../lib/supabaseClient"
 import { RefreshCcw, Upload } from "lucide-react"
 
-// ✅ INTERFACES TOEGEVOEGD
 interface Version {
   id: string
   prompt: string
@@ -112,6 +111,7 @@ export default function Home() {
   async function implementChange(html: string, originalPrompt: string) {
     console.log("⚡ implementChange AANGEROEPEN")
     const timestamp = new Date().toISOString()
+
     setHtmlPreview(html)
     setShowLiveProject(false)
 
@@ -125,7 +125,12 @@ export default function Home() {
       },
     ])
 
-    if (!error) fetchVersions()
+    if (!error) {
+      fetchVersions()
+      alert("Wijziging succesvol toegepast.")
+    } else {
+      alert("Fout bij opslaan wijziging: " + error.message)
+    }
   }
 
   async function publishLive() {
@@ -177,7 +182,6 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
-      {/* Sidebar */}
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
         <div className="flex justify-between items-center mb-4">
@@ -205,7 +209,7 @@ export default function Home() {
                 <div className="whitespace-pre-line">{msg.content}</div>
                 {msg.loading && <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>}
                 {msg.explanation && <div className="text-xs italic text-zinc-600 mt-1">{msg.explanation}</div>}
-                {msg.hasChanges && (
+                {msg.hasChanges && msg.html && (
                   <button
                     onClick={() => implementChange(msg.html!, msg.content)}
                     className="mt-2 text-sm text-blue-600 underline"
