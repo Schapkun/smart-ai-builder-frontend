@@ -4,23 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { supabase } from "../lib/supabaseClient"
 import { RefreshCcw, Upload } from "lucide-react"
 
-interface Version {
-  id: string
-  prompt: string
-  page_route?: string
-  html_preview: string
-  html_live: string
-  timestamp: string
-}
-
-interface ChatMessage {
-  role: "user" | "assistant"
-  content: string
-  html?: string
-  explanation?: string
-  hasChanges?: boolean
-  loading?: boolean
-}
+// ...interfaces ongewijzigd...
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
@@ -31,7 +15,6 @@ export default function Home() {
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
-
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
 
   useEffect(() => {
@@ -110,6 +93,7 @@ export default function Home() {
   }
 
   async function implementChange(html: string, originalPrompt: string) {
+    console.log("⚡ implementChange AANGEROEPEN") // ✅ Debug log
     const timestamp = new Date().toISOString()
     setHtmlPreview(html)
     setShowLiveProject(false)
@@ -176,15 +160,12 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
+      {/* Sidebar */}
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
+        {/* Header & buttons */}
         <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
-
         <div className="flex justify-between items-center mb-4">
-          <button
-            onClick={fetchVersions}
-            className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full"
-            title="Ververs preview"
-          >
+          <button onClick={fetchVersions} className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full">
             <RefreshCcw size={18} />
           </button>
           <button
@@ -196,6 +177,7 @@ export default function Home() {
           </button>
         </div>
 
+        {/* Chat messages */}
         <div className="flex-1 overflow-auto">
           <div className="flex flex-col gap-2">
             {chatHistory.map((msg, idx) => (
@@ -206,13 +188,9 @@ export default function Home() {
                 }`}
               >
                 <div className="whitespace-pre-line">{msg.content}</div>
-                {msg.role === "assistant" && msg.loading && (
-                  <div className="text-xs text-zinc-500 mt-1 italic animate-pulse">AI is aan het typen...</div>
-                )}
-                {msg.role === "assistant" && msg.explanation && (
-                  <div className="text-xs text-zinc-600 mt-1 italic">{msg.explanation}</div>
-                )}
-                {msg.role === "assistant" && msg.hasChanges && (
+                {msg.loading && <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>}
+                {msg.explanation && <div className="text-xs italic text-zinc-600 mt-1">{msg.explanation}</div>}
+                {msg.hasChanges && (
                   <button
                     onClick={() => implementChange(msg.html!, msg.content)}
                     className="mt-2 text-sm text-blue-600 underline"
@@ -226,6 +204,7 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Prompt input */}
         <div className="mt-4 flex items-center gap-2">
           <textarea
             value={prompt}
@@ -247,16 +226,19 @@ export default function Home() {
           </button>
         </div>
 
+        {/* Version list */}
         <div className="mt-4">
           <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
           <ul className="space-y-1 max-h-[150px] overflow-auto">
             {versions.map((v) => (
               <li
                 key={v.id}
-                className={`cursor-pointer px-3 py-2 rounded transition ${v.timestamp === versionId ? "bg-zinc-700" : "hover:bg-zinc-700"}`}
+                className={`cursor-pointer px-3 py-2 rounded transition ${
+                  v.timestamp === versionId ? "bg-zinc-700" : "hover:bg-zinc-700"
+                }`}
                 onClick={() => selectVersion(v)}
               >
-                <time dateTime={v.timestamp} className="block text-xs text-zinc-500">
+                <time className="block text-xs text-zinc-500">
                   {new Date(v.timestamp).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
                 </time>
                 <p className="truncate text-sm">{v.prompt}</p>
@@ -266,6 +248,7 @@ export default function Home() {
         </div>
       </aside>
 
+      {/* Preview */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-extrabold">Chat + Project Preview</h1>
@@ -277,14 +260,9 @@ export default function Home() {
           </button>
         </div>
 
-        {!showLiveProject && (
-          <div
-            className="w-full h-[85vh] rounded border p-4 overflow-auto"
-            dangerouslySetInnerHTML={{ __html: htmlPreview }}
-          />
-        )}
-
-        {showLiveProject && (
+        {!showLiveProject ? (
+          <div className="w-full h-[85vh] rounded border p-4 overflow-auto" dangerouslySetInnerHTML={{ __html: htmlPreview }} />
+        ) : (
           <iframe
             src="https://meester.app"
             title="Live Supabase Project"
