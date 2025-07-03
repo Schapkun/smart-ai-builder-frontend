@@ -4,7 +4,24 @@ import { useState, useEffect, useRef } from "react"
 import { supabase } from "../lib/supabaseClient"
 import { RefreshCcw, Upload } from "lucide-react"
 
-// ...interfaces ongewijzigd...
+// ✅ INTERFACES TOEGEVOEGD
+interface Version {
+  id: string
+  prompt: string
+  page_route?: string
+  html_preview: string
+  html_live: string
+  timestamp: string
+}
+
+interface ChatMessage {
+  role: "user" | "assistant"
+  content: string
+  html?: string
+  explanation?: string
+  hasChanges?: boolean
+  loading?: boolean
+}
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
@@ -93,7 +110,7 @@ export default function Home() {
   }
 
   async function implementChange(html: string, originalPrompt: string) {
-    console.log("⚡ implementChange AANGEROEPEN") // ✅ Debug log
+    console.log("⚡ implementChange AANGEROEPEN")
     const timestamp = new Date().toISOString()
     setHtmlPreview(html)
     setShowLiveProject(false)
@@ -162,7 +179,6 @@ export default function Home() {
     <div className="flex h-screen bg-zinc-900 text-white">
       {/* Sidebar */}
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
-        {/* Header & buttons */}
         <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
         <div className="flex justify-between items-center mb-4">
           <button onClick={fetchVersions} className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full">
@@ -177,7 +193,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Chat messages */}
         <div className="flex-1 overflow-auto">
           <div className="flex flex-col gap-2">
             {chatHistory.map((msg, idx) => (
@@ -204,7 +219,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Prompt input */}
         <div className="mt-4 flex items-center gap-2">
           <textarea
             value={prompt}
@@ -226,7 +240,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Version list */}
         <div className="mt-4">
           <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
           <ul className="space-y-1 max-h-[150px] overflow-auto">
@@ -248,7 +261,6 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Preview */}
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-extrabold">Chat + Project Preview</h1>
