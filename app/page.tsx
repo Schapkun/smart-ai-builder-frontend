@@ -114,9 +114,8 @@ export default function Home() {
   async function implementChange(html: string, originalPrompt: string) {
     console.log("⚡ implementChange AANGEROEPEN")
     const timestamp = new Date().toISOString()
-    const timestamp_local = new Date().toLocaleString("nl-NL", {
-      timeZone: "Europe/Amsterdam",
-      hour12: false,
+    const timestamp_local = new Date().toLocaleString("sv-SE", {
+      timeZone: "Europe/Amsterdam"
     })
 
     const newVersion = {
