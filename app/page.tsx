@@ -125,7 +125,7 @@ export default function Home() {
         html_preview: html,
         timestamp,
         timestamp_local,
-        supabase_instructions: { bron: "chat-implementatie" },
+        supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
         page_route: currentPageRoute,
       },
     ])
