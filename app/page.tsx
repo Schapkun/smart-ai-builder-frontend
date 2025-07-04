@@ -117,7 +117,9 @@ export default function Home() {
         return
       }
 
-      if (data.html) setHtmlPreview(data.html)
+      // VERWIJDER deze regel om automatische preview te vermijden:
+      // if (data.html) setHtmlPreview(data.html)
+
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
       fetchVersions()
     } catch (e: any) {
