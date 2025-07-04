@@ -21,6 +21,7 @@ interface ChatMessage {
   explanation?: string
   hasChanges?: boolean
   loading?: boolean
+  showCode?: boolean
 }
 
 export default function Home() {
@@ -99,6 +100,7 @@ export default function Home() {
         explanation: instructions.message || undefined,
         hasChanges: !!data.html,
         loading: false,
+        showCode: false,
       }
 
       const timestamp = new Date().toISOString()
@@ -116,9 +118,6 @@ export default function Home() {
         alert("Fout bij opslaan wijziging: " + error.message)
         return
       }
-
-      // VERWIJDER deze regel om automatische preview te vermijden:
-      // if (data.html) setHtmlPreview(data.html)
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
       fetchVersions()
@@ -240,13 +239,23 @@ export default function Home() {
                 <div className="whitespace-pre-line">{msg.content}</div>
                 {msg.loading && <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>}
                 {msg.explanation && <div className="text-xs italic text-zinc-600 mt-1">{msg.explanation}</div>}
-                {msg.hasChanges && msg.html && (
-                  <button
-                    onClick={() => implementChange(msg.html!, msg.content)}
-                    className="mt-2 text-sm text-blue-600 underline"
-                  >
-                    Implementeer wijzigingen
-                  </button>
+                {msg.hasChanges && (
+                  <>
+                    <button
+                      onClick={() => implementChange(msg.html!, msg.content)}
+                      className="mt-2 text-sm text-blue-600 underline"
+                    >
+                      Implementeer wijzigingen
+                    </button>
+                    {msg.html && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-700">Toon HTML-code</summary>
+                        <pre className="bg-zinc-100 text-xs text-black p-2 mt-2 rounded overflow-auto max-h-64 whitespace-pre-wrap">
+                          {msg.html}
+                        </pre>
+                      </details>
+                    )}
+                  </>
                 )}
               </div>
             ))}
