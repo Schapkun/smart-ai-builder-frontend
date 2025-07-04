@@ -64,7 +64,7 @@ export default function Home() {
       .limit(20)
 
     if (error) return console.error("Fout bij ophalen versies:", error)
-    const filtered = (data || []).filter((v) => v.html_preview?.trim())
+    const filtered = (data || []).filter((v) => v.prompt?.trim())
     setVersions(filtered)
   }
 
@@ -111,14 +111,13 @@ export default function Home() {
         supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
       }
 
-      if (data.html !== htmlPreview) {
-        const { error } = await supabase.from("versions").upsert([newVersion], { onConflict: "page_route,timestamp" })
-        if (error) {
-          alert("Fout bij opslaan wijziging: " + error.message)
-          return
-        }
+      const { error } = await supabase.from("versions").insert([newVersion])
+      if (error) {
+        alert("Fout bij opslaan wijziging: " + error.message)
+        return
       }
 
+      if (data.html) setHtmlPreview(data.html)
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
       fetchVersions()
     } catch (e: any) {
