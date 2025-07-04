@@ -96,8 +96,8 @@ export default function Home() {
       const aiMsg: ChatMessage = {
         role: "assistant",
         content: instructions.message || "Ik heb je prompt ontvangen.",
-        html: data.html || undefined,
         explanation: instructions.message || undefined,
+        html: data.html || undefined,
         hasChanges: !!data.html,
         loading: false,
         showCode: false,
@@ -238,7 +238,6 @@ export default function Home() {
               >
                 <div className="whitespace-pre-line">{msg.content}</div>
                 {msg.loading && <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>}
-                {msg.explanation && <div className="text-xs italic text-zinc-600 mt-1">{msg.explanation}</div>}
                 {msg.hasChanges && (
                   <>
                     <button
