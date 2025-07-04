@@ -104,7 +104,7 @@ export default function Home() {
       const timestamp = new Date().toISOString()
       const newVersion = {
         prompt: userInput,
-        html_preview: data.html || null,
+        html_preview: data.html || htmlPreview,
         timestamp,
         timestamp_local: new Date().toLocaleString("sv-SE", { timeZone: "Europe/Amsterdam", hour12: false }),
         page_route: currentPageRoute,
