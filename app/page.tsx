@@ -58,7 +58,6 @@ export default function Home() {
     const filtered = (data || []).filter((v) => v.prompt?.trim())
     setVersions(filtered)
 
-    // laatste preview tonen (niet html_live!)
     const latest = filtered.find(v => v.page_route === currentPageRoute && v.html_preview)
     if (latest) {
       setHtmlPreview(latest.html_preview)
@@ -101,21 +100,6 @@ export default function Home() {
       }
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
-
-      // sla html alleen op bij wijzigingen (niet direct toepassen)
-      if (data.html) {
-        const timestamp = new Date().toISOString()
-        const newVersion = {
-          prompt: userInput,
-          html_preview: data.html,
-          timestamp,
-          timestamp_local: new Date().toLocaleString("sv-SE", { timeZone: "Europe/Amsterdam", hour12: false }),
-          page_route: currentPageRoute,
-          supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
-        }
-        await supabase.from("versions").insert([newVersion])
-        fetchVersions()
-      }
 
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
