@@ -36,16 +36,6 @@ export default function Home() {
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
 
   useEffect(() => {
-    fetch(`https://smart-ai-builder-backend.onrender.com/preview/${currentPageRoute}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.html) {
-          setHtmlPreview(data.html)
-          setShowLiveProject(false)
-        }
-      })
-      .catch(err => console.error("Fout bij ophalen preview:", err))
-
     fetchVersions()
   }, [])
 
@@ -67,6 +57,13 @@ export default function Home() {
     if (error) return console.error("Fout bij ophalen versies:", error)
     const filtered = (data || []).filter((v) => v.prompt?.trim())
     setVersions(filtered)
+
+    // laatste preview tonen (niet html_live!)
+    const latest = filtered.find(v => v.page_route === currentPageRoute && v.html_preview)
+    if (latest) {
+      setHtmlPreview(latest.html_preview)
+      setShowLiveProject(false)
+    }
   }
 
   async function handleSubmit() {
@@ -103,24 +100,23 @@ export default function Home() {
         showCode: false,
       }
 
-      const timestamp = new Date().toISOString()
-      const newVersion = {
-        prompt: userInput,
-        html_preview: data.html || htmlPreview,
-        timestamp,
-        timestamp_local: new Date().toLocaleString("sv-SE", { timeZone: "Europe/Amsterdam", hour12: false }),
-        page_route: currentPageRoute,
-        supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
-      }
-
-      const { error } = await supabase.from("versions").insert([newVersion])
-      if (error) {
-        alert("Fout bij opslaan wijziging: " + error.message)
-        return
-      }
-
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
-      fetchVersions()
+
+      // sla html alleen op bij wijzigingen (niet direct toepassen)
+      if (data.html) {
+        const timestamp = new Date().toISOString()
+        const newVersion = {
+          prompt: userInput,
+          html_preview: data.html,
+          timestamp,
+          timestamp_local: new Date().toLocaleString("sv-SE", { timeZone: "Europe/Amsterdam", hour12: false }),
+          page_route: currentPageRoute,
+          supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
+        }
+        await supabase.from("versions").insert([newVersion])
+        fetchVersions()
+      }
+
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
@@ -238,7 +234,8 @@ export default function Home() {
               >
                 <div className="whitespace-pre-line">{msg.content}</div>
                 {msg.loading && <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>}
-                {msg.hasChanges && (
+                {msg.explanation && <div className="text-xs italic text-zinc-600 mt-1">{msg.explanation}</div>}
+                {msg.hasChanges && msg.html && (
                   <>
                     <button
                       onClick={() => implementChange(msg.html!, msg.content)}
@@ -246,14 +243,12 @@ export default function Home() {
                     >
                       Implementeer wijzigingen
                     </button>
-                    {msg.html && (
-                      <details className="mt-1">
-                        <summary className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-700">Toon HTML-code</summary>
-                        <pre className="bg-zinc-100 text-xs text-black p-2 mt-2 rounded overflow-auto max-h-64 whitespace-pre-wrap">
-                          {msg.html}
-                        </pre>
-                      </details>
-                    )}
+                    <details className="mt-1">
+                      <summary className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-700">Toon HTML-code</summary>
+                      <pre className="bg-zinc-100 text-xs text-black p-2 mt-2 rounded overflow-auto max-h-64 whitespace-pre-wrap">
+                        {msg.html}
+                      </pre>
+                    </details>
                   </>
                 )}
               </div>
