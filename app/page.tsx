@@ -251,7 +251,7 @@ export default function Home() {
                       <summary className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-700">
                         Toon HTML-code
                       </summary>
-                      <pre className="bg-zinc-100 text-xs text-black p-2 mt-2 rounded overflow-auto max-h-64 whitespace-pre-wrap">
+                      <pre className="bg-zinc-50 text-xs text-black p-2 mt-2 rounded overflow-auto max-h-64 whitespace-pre-wrap">
                         {msg.html}
                       </pre>
                     </details>
