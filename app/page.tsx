@@ -41,14 +41,17 @@ export default function Home() {
     ? "https://meester.app"
     : "https://preview-version.onrender.com"
 
+  // Haal versies op bij mount én wanneer de huidige pagina verandert
   useEffect(() => {
     fetchVersions()
-  }, [])
+  }, [currentPageRoute])
 
+  // Scroll naar onderaan bij nieuwe berichten
   useEffect(() => {
     scrollToBottom()
   }, [chatHistory])
 
+  // Luister naar iframe berichten voor URL updates
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (typeof event.data === "string" && event.data.startsWith("url:")) {
@@ -76,7 +79,7 @@ export default function Home() {
     const filtered = (data || []).filter((v) => v.prompt?.trim())
     setVersions(filtered)
 
-    const latest = filtered.find(v => v.page_route === currentPageRoute && v.html_preview)
+    const latest = filtered.find((v) => v.page_route === currentPageRoute && v.html_preview)
     if (latest) {
       setHtmlPreview(latest.html_preview)
       setShowLiveProject(false)
@@ -112,8 +115,8 @@ export default function Home() {
         role: "assistant",
         content: instructions.message || "Ik heb je prompt ontvangen.",
         explanation: instructions.message || undefined,
-        html: data.files?.[0]?.content || undefined,
-        hasChanges: !!data.files?.length,
+        html: data.html || undefined,
+        hasChanges: instructions.hasChanges || false,
         loading: false,
         showCode: false,
       }
