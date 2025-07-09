@@ -40,8 +40,6 @@ export default function Home() {
 
   useEffect(() => {
     fetchVersions()
-    window.addEventListener("message", handleIframeNavigation)
-    return () => window.removeEventListener("message", handleIframeNavigation)
   }, [])
 
   useEffect(() => {
@@ -54,12 +52,19 @@ export default function Home() {
     setCurrentIframePath(url)
   }, [showLiveProject])
 
-  const handleIframeNavigation = (event: MessageEvent) => {
-    if (typeof event.data === "string" && event.data.startsWith("URL:")) {
-      const url = event.data.replace("URL:", "")
-      setCurrentIframePath(url)
-    }
-  }
+  useEffect(() => {
+    const interval = setInterval(() => {
+      try {
+        const href = iframeRef.current?.contentWindow?.location.href
+        if (href && href !== currentIframePath) {
+          setCurrentIframePath(href)
+        }
+      } catch (e) {
+        // Mogelijk cross-origin, negeren
+      }
+    }, 500)
+    return () => clearInterval(interval)
+  }, [currentIframePath])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -173,14 +178,14 @@ export default function Home() {
       fetchVersions()
       const successMsg: ChatMessage = {
         role: "assistant",
-        content: "\ud83d\ude80 Wijziging succesvol toegepast.",
+        content: "🚀 Wijziging succesvol toegepast.",
         loading: false,
       }
       setChatHistory((prev) => [...prev, successMsg])
     } else {
       const errorMsg: ChatMessage = {
         role: "assistant",
-        content: `\u274c Fout bij opslaan wijziging: ${error.message}`,
+        content: `❌ Fout bij opslaan wijziging: ${error.message}`,
         loading: false,
       }
       setChatHistory((prev) => [...prev, errorMsg])
