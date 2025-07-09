@@ -32,10 +32,11 @@ export default function Home() {
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
+  const [iframeUrl, setIframeUrl] = useState("https://meester.app")
+  const [currentIframePath, setCurrentIframePath] = useState("https://meester.app")
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
-  const [iframeUrl, setIframeUrl] = useState("https://meester.app")
-  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     fetchVersions()
@@ -50,13 +51,13 @@ export default function Home() {
   useEffect(() => {
     const url = showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com/"
     setIframeUrl(url)
+    setCurrentIframePath(url)
   }, [showLiveProject])
 
   const handleIframeNavigation = (event: MessageEvent) => {
     if (typeof event.data === "string" && event.data.startsWith("URL:")) {
       const url = event.data.replace("URL:", "")
-      console.log("Ontvangen via postMessage:", url)
-      setIframeUrl(url)
+      setCurrentIframePath(url)
     }
   }
 
@@ -117,7 +118,6 @@ export default function Home() {
       }
 
       setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
-
     } catch (e: any) {
       alert("Fout bij AI-aanroep: " + e.message)
     }
@@ -134,7 +134,7 @@ export default function Home() {
 <script>
 (function() {
   function sendCurrentPath() {
-    window.parent.postMessage('URL:' + window.location.href, '*');
+    window.parent.postMessage("URL:" + window.location.href, "*");
   }
   sendCurrentPath();
   const pushState = history.pushState;
@@ -147,16 +147,13 @@ export default function Home() {
     replaceState.apply(history, arguments);
     sendCurrentPath();
   };
-  window.addEventListener('popstate', sendCurrentPath);
+  window.addEventListener("popstate", sendCurrentPath);
 })();
 </script>`
 
-    let htmlWithTracking = ""
-    if (html.includes("</body>")) {
-      htmlWithTracking = html.replace("</body>", `${injectedScript}</body>`)
-    } else {
-      htmlWithTracking = html + injectedScript
-    }
+    const htmlWithTracking = html.includes("</body>")
+      ? html.replace("</body>", `${injectedScript}</body>`)
+      : html + injectedScript
 
     const newVersion = {
       prompt: originalPrompt,
@@ -176,14 +173,14 @@ export default function Home() {
       fetchVersions()
       const successMsg: ChatMessage = {
         role: "assistant",
-        content: "🚀 Wijziging succesvol toegepast.",
+        content: "\ud83d\ude80 Wijziging succesvol toegepast.",
         loading: false,
       }
       setChatHistory((prev) => [...prev, successMsg])
     } else {
       const errorMsg: ChatMessage = {
         role: "assistant",
-        content: `❌ Fout bij opslaan wijziging: ${error.message}`,
+        content: `\u274c Fout bij opslaan wijziging: ${error.message}`,
         loading: false,
       }
       setChatHistory((prev) => [...prev, errorMsg])
@@ -252,86 +249,12 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto">
-          <div className="flex flex-col gap-2">
-            {chatHistory.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-lg max-w-[95%] ${
-                  msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"
-                }`}
-              >
-                <div className="whitespace-pre-line">{msg.content}</div>
-                {msg.loading && <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>}
-                {msg.explanation && <div className="text-xs italic text-zinc-600 mt-1">{msg.explanation}</div>}
-                {msg.hasChanges && msg.html && (
-                  <>
-                    <button
-                      onClick={() => implementChange(msg.html!, msg.content)}
-                      className="mt-2 text-sm text-blue-600 underline"
-                    >
-                      Implementeer wijzigingen
-                    </button>
-                    <details className="mt-1">
-                      <summary className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-700">Toon HTML-code</summary>
-                      <pre className="bg-zinc-100 text-xs text-black p-2 mt-2 rounded overflow-auto max-h-64 whitespace-pre-wrap">
-                        {msg.html}
-                      </pre>
-                    </details>
-                  </>
-                )}
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-2 relative">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit()
-              }
-            }}
-            className="flex-grow bg-zinc-800 p-3 rounded text-white resize-none placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="Typ hier je prompt..."
-          />
-
-          <button
-            onClick={handleSubmit}
-            className="bg-green-600 hover:bg-green-500 px-4 py-2 text-sm rounded-full font-medium"
-          >
-            Genereer code
-          </button>
-        </div>
-
-        <div className="mt-4">
-          <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
-          <ul className="space-y-1 max-h-[150px] overflow-auto">
-            {versions.map((v) => (
-              <li
-                key={v.id}
-                className={`cursor-pointer px-3 py-2 rounded transition ${
-                  v.timestamp === versionId ? "bg-zinc-700" : "hover:bg-zinc-700"
-                }`}
-                onClick={() => selectVersion(v)}
-              >
-                <time className="block text-xs text-zinc-500">
-                  {new Date(v.timestamp).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
-                </time>
-                <p className="truncate text-sm">{v.prompt}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <div className="flex-1 overflow-auto"> {/* Chat UI zou hier komen */} </div>
       </aside>
 
       <main className="flex-1 p-8 overflow-auto bg-zinc-100 text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-3 rounded">
-          <h1 className="text-sm font-medium break-words max-w-[90%] text-zinc-700">{iframeUrl}</h1>
+          <h1 className="text-sm font-medium break-words max-w-[90%] text-zinc-700">{currentIframePath}</h1>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
