@@ -32,10 +32,10 @@ export default function Home() {
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
-  const [iframeUrl, setIframeUrl] = useState("https://meester.app")
-  const iframeRef = useRef<HTMLIFrameElement>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
+  const [iframeUrl, setIframeUrl] = useState("https://meester.app")
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     fetchVersions()
@@ -130,14 +130,31 @@ export default function Home() {
     })
 
     const injectedScript = `
-      <script>
-        window.addEventListener('load', () => {
-          setInterval(() => {
-            window.parent.postMessage('URL:' + window.location.href, '*');
-          }, 500);
-        });
-      </script>
-    `
+<script>
+(function() {
+  function sendCurrentPath() {
+    window.parent.postMessage('URL:' + window.location.href, '*');
+  }
+
+  sendCurrentPath();
+
+  const pushState = history.pushState;
+  history.pushState = function () {
+    pushState.apply(history, arguments);
+    sendCurrentPath();
+  };
+
+  const replaceState = history.replaceState;
+  history.replaceState = function () {
+    replaceState.apply(history, arguments);
+    sendCurrentPath();
+  };
+
+  window.addEventListener('popstate', sendCurrentPath);
+})();
+</script>
+`
+
     const htmlWithTracking = html.replace("</body>", `${injectedScript}</body>`)
 
     const newVersion = {
@@ -313,7 +330,7 @@ export default function Home() {
 
       <main className="flex-1 p-8 overflow-auto bg-zinc-100 text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-3 rounded">
-          <h1 className="text-base font-medium break-words max-w-[90%] text-zinc-700">{iframeUrl}</h1>
+          <h1 className="text-sm font-medium break-words max-w-[90%] text-zinc-700">{iframeUrl}</h1>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
