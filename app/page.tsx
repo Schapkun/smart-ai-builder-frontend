@@ -189,6 +189,8 @@ export default function Home() {
     setShowLiveProject(false)
   }
 
+  const iframeUrl = showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com/"
+
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
@@ -286,7 +288,7 @@ export default function Home() {
 
       <main className="flex-1 p-8 overflow-auto bg-zinc-100 text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-3 rounded">
-          <h1 className="text-3xl font-extrabold">Chat + Project Preview</h1>
+          <h1 className="text-3xl font-extrabold break-words max-w-[90%]">{iframeUrl}</h1>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
@@ -296,21 +298,14 @@ export default function Home() {
         </div>
 
         <div className="bg-white border rounded shadow p-1">
-          {!showLiveProject ? (
-            <iframe
-              src="https://preview-version.onrender.com/"
-              sandbox="allow-same-origin allow-scripts"
-              className="w-full h-[85vh] rounded"
-            />
-          ) : (
-            <iframe
-              src="https://meester.app"
-              title="Live Supabase Project"
-              className="w-full h-[85vh] rounded"
-            />
-          )}
+          <iframe
+            src={iframeUrl}
+            sandbox="allow-same-origin allow-scripts"
+            className="w-full h-[85vh] rounded"
+          />
         </div>
       </main>
     </div>
   )
 }
+
