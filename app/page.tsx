@@ -305,7 +305,7 @@ export default function Home() {
         </div>
       </aside>
 
-      <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
+      <main className="flex-1 p-8 overflow-auto bg-zinc-100 text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-2 rounded">
           <span className="text-sm text-zinc-700 break-all">
             {currentIframeUrl || iframeSrc}
