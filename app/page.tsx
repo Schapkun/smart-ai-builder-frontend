@@ -138,7 +138,7 @@ export default function Home() {
     } else {
       const errorMsg: ChatMessage = {
         role: "assistant",
-        content: ❌ Fout bij opslaan wijziging: ${error.message},
+        content: `❌ Fout bij opslaan wijziging: ${error.message}`,
         loading: false,
       }
       setChatHistory((prev) => [...prev, errorMsg])
@@ -189,6 +189,8 @@ export default function Home() {
     setShowLiveProject(false)
   }
 
+  const iframeUrl = showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com/"
+
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
@@ -212,9 +214,9 @@ export default function Home() {
             {chatHistory.map((msg, idx) => (
               <div
                 key={idx}
-                className={p-3 rounded-lg max-w-[95%] ${
+                className={`p-3 rounded-lg max-w-[95%] ${
                   msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"
-                }}
+                }`}
               >
                 <div className="whitespace-pre-line">{msg.content}</div>
                 {msg.loading && <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>}
@@ -269,9 +271,9 @@ export default function Home() {
             {versions.map((v) => (
               <li
                 key={v.id}
-                className={cursor-pointer px-3 py-2 rounded transition ${
+                className={`cursor-pointer px-3 py-2 rounded transition ${
                   v.timestamp === versionId ? "bg-zinc-700" : "hover:bg-zinc-700"
-                }}
+                }`}
                 onClick={() => selectVersion(v)}
               >
                 <time className="block text-xs text-zinc-500">
@@ -286,7 +288,7 @@ export default function Home() {
 
       <main className="flex-1 p-8 overflow-auto bg-zinc-100 text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-3 rounded">
-          <h1 className="text-3xl font-extrabold">Chat + Project Preview</h1>
+          <h1 className="text-3xl font-extrabold break-words max-w-[90%]">{iframeUrl}</h1>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
@@ -296,21 +298,14 @@ export default function Home() {
         </div>
 
         <div className="bg-white border rounded shadow p-1">
-          {!showLiveProject ? (
-            <iframe
-              src="https://preview-version.onrender.com/"
-              sandbox="allow-same-origin allow-scripts"
-              className="w-full h-[85vh] rounded"
-            />
-          ) : (
-            <iframe
-              src="https://meester.app"
-              title="Live Supabase Project"
-              className="w-full h-[85vh] rounded"
-            />
-          )}
+          <iframe
+            src={iframeUrl}
+            sandbox="allow-same-origin allow-scripts"
+            className="w-full h-[85vh] rounded"
+          />
         </div>
       </main>
     </div>
   )
 }
+
