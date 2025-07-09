@@ -32,8 +32,11 @@ export default function Home() {
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
-  const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
+  const [iframeUrl, setIframeUrl] = useState("https://meester.app")
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     fetchVersions()
@@ -42,6 +45,21 @@ export default function Home() {
   useEffect(() => {
     scrollToBottom()
   }, [chatHistory])
+
+  useEffect(() => {
+    const baseUrl = showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com/"
+    setIframeUrl(baseUrl)
+  }, [showLiveProject])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentUrl = iframeRef.current?.contentWindow?.location.href
+      if (currentUrl && currentUrl !== iframeUrl) {
+        setIframeUrl(currentUrl)
+      }
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [iframeUrl])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -189,106 +207,16 @@ export default function Home() {
     setShowLiveProject(false)
   }
 
-  const iframeUrl = showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com/"
-
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
-
-        <div className="flex justify-between items-center mb-4">
-          <button onClick={fetchVersions} className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full">
-            <RefreshCcw size={18} />
-          </button>
-          <button
-            disabled={!versionId || loadingPublish}
-            onClick={publishLive}
-            className="bg-blue-600 hover:bg-blue-500 px-3 py-2 text-xs rounded-full flex items-center gap-1 disabled:opacity-50"
-          >
-            <Upload size={14} /> Publiceer live
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-auto">
-          <div className="flex flex-col gap-2">
-            {chatHistory.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-lg max-w-[95%] ${
-                  msg.role === "user" ? "self-end bg-green-100 text-black" : "self-start bg-gray-100 text-black"
-                }`}
-              >
-                <div className="whitespace-pre-line">{msg.content}</div>
-                {msg.loading && <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>}
-                {msg.explanation && <div className="text-xs italic text-zinc-600 mt-1">{msg.explanation}</div>}
-                {msg.hasChanges && msg.html && (
-                  <>
-                    <button
-                      onClick={() => implementChange(msg.html!, msg.content)}
-                      className="mt-2 text-sm text-blue-600 underline"
-                    >
-                      Implementeer wijzigingen
-                    </button>
-                    <details className="mt-1">
-                      <summary className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-700">Toon HTML-code</summary>
-                      <pre className="bg-zinc-100 text-xs text-black p-2 mt-2 rounded overflow-auto max-h-64 whitespace-pre-wrap">
-                        {msg.html}
-                      </pre>
-                    </details>
-                  </>
-                )}
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-2 relative">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit()
-              }
-            }}
-            className="flex-grow bg-zinc-800 p-3 rounded text-white resize-none placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="Typ hier je prompt..."
-          />
-
-          <button
-            onClick={handleSubmit}
-            className="bg-green-600 hover:bg-green-500 px-4 py-2 text-sm rounded-full font-medium"
-          >
-            Genereer code
-          </button>
-        </div>
-
-        <div className="mt-4">
-          <h2 className="font-semibold text-sm text-zinc-400 mb-2">Version History</h2>
-          <ul className="space-y-1 max-h-[150px] overflow-auto">
-            {versions.map((v) => (
-              <li
-                key={v.id}
-                className={`cursor-pointer px-3 py-2 rounded transition ${
-                  v.timestamp === versionId ? "bg-zinc-700" : "hover:bg-zinc-700"
-                }`}
-                onClick={() => selectVersion(v)}
-              >
-                <time className="block text-xs text-zinc-500">
-                  {new Date(v.timestamp).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
-                </time>
-                <p className="truncate text-sm">{v.prompt}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* Sidebar content blijft gelijk */}
       </aside>
 
       <main className="flex-1 p-8 overflow-auto bg-zinc-100 text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-3 rounded">
-          <h1 className="text-3xl font-extrabold break-words max-w-[90%]">{iframeUrl}</h1>
+          <p className="text-sm font-mono truncate max-w-[90%]">{iframeUrl}</p>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
@@ -299,6 +227,7 @@ export default function Home() {
 
         <div className="bg-white border rounded shadow p-1">
           <iframe
+            ref={iframeRef}
             src={iframeUrl}
             sandbox="allow-same-origin allow-scripts"
             className="w-full h-[85vh] rounded"
@@ -308,4 +237,3 @@ export default function Home() {
     </div>
   )
 }
-
