@@ -55,6 +55,7 @@ export default function Home() {
   const handleIframeNavigation = (event: MessageEvent) => {
     if (typeof event.data === "string" && event.data.startsWith("URL:")) {
       const url = event.data.replace("URL:", "")
+      console.log("Ontvangen via postMessage:", url)
       setIframeUrl(url)
     }
   }
@@ -135,27 +136,27 @@ export default function Home() {
   function sendCurrentPath() {
     window.parent.postMessage('URL:' + window.location.href, '*');
   }
-
   sendCurrentPath();
-
   const pushState = history.pushState;
   history.pushState = function () {
     pushState.apply(history, arguments);
     sendCurrentPath();
   };
-
   const replaceState = history.replaceState;
   history.replaceState = function () {
     replaceState.apply(history, arguments);
     sendCurrentPath();
   };
-
   window.addEventListener('popstate', sendCurrentPath);
 })();
-</script>
-`
+</script>`
 
-    const htmlWithTracking = html.replace("</body>", `${injectedScript}</body>`)
+    let htmlWithTracking = ""
+    if (html.includes("</body>")) {
+      htmlWithTracking = html.replace("</body>", `${injectedScript}</body>`)
+    } else {
+      htmlWithTracking = html + injectedScript
+    }
 
     const newVersion = {
       prompt: originalPrompt,
