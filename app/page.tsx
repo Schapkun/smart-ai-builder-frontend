@@ -112,8 +112,8 @@ export default function Home() {
         role: "assistant",
         content: instructions.message || "Ik heb je prompt ontvangen.",
         explanation: instructions.message || undefined,
-        html: data.html || undefined,
-        hasChanges: !!data.html,
+        html: data.files?.[0]?.content || undefined,
+        hasChanges: !!data.files?.length,
         loading: false,
         showCode: false,
       }
@@ -255,24 +255,13 @@ export default function Home() {
                 {msg.loading && (
                   <div className="text-xs italic text-zinc-500 mt-1 animate-pulse">AI is aan het typen...</div>
                 )}
-                {msg.explanation && <div className="text-xs italic text-zinc-600 mt-1">{msg.explanation}</div>}
                 {msg.hasChanges && msg.html && (
-                  <>
-                    <button
-                      onClick={() => implementChange(msg.html!, msg.content)}
-                      className="mt-2 text-sm text-blue-600 underline"
-                    >
-                      Implementeer wijzigingen
-                    </button>
-                    <details className="mt-1">
-                      <summary className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-700">
-                        Toon HTML-code
-                      </summary>
-                      <pre className="bg-zinc-50 text-xs text-black p-2 mt-2 rounded overflow-auto max-h-64 whitespace-pre-wrap">
-                        {msg.html}
-                      </pre>
-                    </details>
-                  </>
+                  <button
+                    onClick={() => implementChange(msg.html!, msg.content)}
+                    className="mt-2 text-sm text-blue-600 underline"
+                  >
+                    Implementeer wijzigingen
+                  </button>
                 )}
               </div>
             ))}
