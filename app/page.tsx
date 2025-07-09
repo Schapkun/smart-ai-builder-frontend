@@ -272,7 +272,6 @@ export default function Home() {
           <iframe
             ref={iframeRef}
             src={iframeUrl}
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
             className="w-full h-[85vh] rounded"
           />
         </div>
