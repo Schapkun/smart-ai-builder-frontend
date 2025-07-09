@@ -32,16 +32,32 @@ export default function Home() {
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
+  const [iframeUrl, setIframeUrl] = useState("https://meester.app")
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
 
   useEffect(() => {
     fetchVersions()
+    window.addEventListener("message", handleIframeNavigation)
+    return () => window.removeEventListener("message", handleIframeNavigation)
   }, [])
 
   useEffect(() => {
     scrollToBottom()
   }, [chatHistory])
+
+  useEffect(() => {
+    const url = showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com/"
+    setIframeUrl(url)
+  }, [showLiveProject])
+
+  const handleIframeNavigation = (event: MessageEvent) => {
+    if (typeof event.data === "string" && event.data.startsWith("URL:")) {
+      const url = event.data.replace("URL:", "")
+      setIframeUrl(url)
+    }
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -113,16 +129,27 @@ export default function Home() {
       hour12: false,
     })
 
+    const injectedScript = `
+      <script>
+        window.addEventListener('load', () => {
+          setInterval(() => {
+            window.parent.postMessage('URL:' + window.location.href, '*');
+          }, 500);
+        });
+      </script>
+    `
+    const htmlWithTracking = html.replace("</body>", `${injectedScript}</body>`)
+
     const newVersion = {
       prompt: originalPrompt,
-      html_preview: html,
+      html_preview: htmlWithTracking,
       timestamp,
       timestamp_local,
       supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
       page_route: currentPageRoute,
     }
 
-    setHtmlPreview(html)
+    setHtmlPreview(htmlWithTracking)
     setShowLiveProject(false)
 
     const { error } = await supabase.from("versions").insert([newVersion])
@@ -188,8 +215,6 @@ export default function Home() {
     setVersionId(v.timestamp)
     setShowLiveProject(false)
   }
-
-  const iframeUrl = showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com/"
 
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
@@ -288,7 +313,7 @@ export default function Home() {
 
       <main className="flex-1 p-8 overflow-auto bg-zinc-100 text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-3 rounded">
-          <h1 className="text-3xl font-extrabold break-words max-w-[90%]">{iframeUrl}</h1>
+          <h1 className="text-base font-medium break-words max-w-[90%] text-zinc-700">{iframeUrl}</h1>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
@@ -299,8 +324,9 @@ export default function Home() {
 
         <div className="bg-white border rounded shadow p-1">
           <iframe
+            ref={iframeRef}
             src={iframeUrl}
-            sandbox="allow-same-origin allow-scripts"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
             className="w-full h-[85vh] rounded"
           />
         </div>
@@ -308,4 +334,3 @@ export default function Home() {
     </div>
   )
 }
-
