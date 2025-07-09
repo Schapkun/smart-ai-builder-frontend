@@ -284,7 +284,7 @@ export default function Home() {
         </div>
       </aside>
 
-      <main className="flex-1 p-8 overflow-auto bg-zinc-50 text-black rounded-l-3xl shadow-inner">
+      <main className="flex-1 p-8 overflow-auto bg-zinc-100 text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-3 rounded">
           <h1 className="text-3xl font-extrabold">Chat + Project Preview</h1>
           <button
