@@ -199,6 +199,23 @@ export default function Home() {
     setLoadingPublish(false)
   }
 
+  async function restoreVersion(versionId: string) {
+    const res = await fetch("https://smart-ai-builder-backend.onrender.com/restore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ version_id: versionId }),
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+      alert("Versie succesvol hersteld naar preview!")
+      setShowLiveProject(false)
+      fetchVersions()
+    } else {
+      alert("Fout bij herstellen: " + (data.error || data.message))
+    }
+  }
+
   function selectVersion(v: Version) {
     setPrompt(v.prompt)
     setHtmlPreview(v.html_preview)
@@ -299,6 +316,15 @@ export default function Home() {
                   {new Date(v.timestamp).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}
                 </time>
                 <p className="truncate text-sm">{v.prompt}</p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    restoreVersion(v.id)
+                  }}
+                  className="mt-1 text-xs text-blue-500 underline"
+                >
+                  Herstel naar preview
+                </button>
               </li>
             ))}
           </ul>
