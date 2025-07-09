@@ -32,8 +32,10 @@ export default function Home() {
   const [showLiveProject, setShowLiveProject] = useState(true)
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
-  const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
+  const [currentIframeUrl, setCurrentIframeUrl] = useState<string>("https://meester.app")
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   const iframeSrc = showLiveProject
     ? "https://meester.app"
@@ -46,6 +48,17 @@ export default function Home() {
   useEffect(() => {
     scrollToBottom()
   }, [chatHistory])
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (typeof event.data === "string" && event.data.startsWith("url:")) {
+        const url = event.data.replace("url:", "")
+        setCurrentIframeUrl(url)
+      }
+    }
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -294,7 +307,9 @@ export default function Home() {
 
       <main className="flex-1 p-8 overflow-auto bg-white text-black rounded-l-3xl shadow-inner">
         <div className="flex justify-between items-center mb-4 bg-zinc-100 px-4 py-2 rounded">
-          <span className="text-sm text-zinc-700 break-all">{iframeSrc}</span>
+          <span className="text-sm text-zinc-700 break-all">
+            {currentIframeUrl || iframeSrc}
+          </span>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
