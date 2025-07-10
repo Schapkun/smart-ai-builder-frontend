@@ -34,6 +34,7 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
   const [currentIframeUrl, setCurrentIframeUrl] = useState<string>("https://meester.app")
+  const [iframeKey, setIframeKey] = useState(0)
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -41,17 +42,14 @@ export default function Home() {
     ? "https://meester.app"
     : "https://preview-version.onrender.com"
 
-  // Haal versies op bij mount én wanneer de huidige pagina verandert
   useEffect(() => {
     fetchVersions()
   }, [currentPageRoute])
 
-  // Scroll naar onderaan bij nieuwe berichten
   useEffect(() => {
     scrollToBottom()
   }, [chatHistory])
 
-  // Luister naar iframe berichten voor URL updates
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (typeof event.data === "string" && event.data.startsWith("url:")) {
@@ -231,8 +229,11 @@ export default function Home() {
       <aside className="w-1/3 p-6 flex flex-col gap-4 border-r border-zinc-800">
         <h1 className="text-3xl font-extrabold mb-4">Loveable Clone</h1>
 
-        <div className="flex justify-between items-center mb-4">
-          <button onClick={fetchVersions} className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full">
+        <div className="flex justify-end items-center mb-4 gap-2">
+          <button
+            onClick={() => setIframeKey((k) => k + 1)}
+            className="bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full"
+          >
             <RefreshCcw size={18} />
           </button>
 
@@ -336,19 +337,12 @@ export default function Home() {
           </button>
         </div>
 
-        {!showLiveProject ? (
-          <iframe
-            src="https://preview-version.onrender.com/"
-            sandbox="allow-same-origin allow-scripts"
-            className="w-full h-[85vh] rounded border"
-          />
-        ) : (
-          <iframe
-            src="https://meester.app"
-            title="Live Supabase Project"
-            className="w-full h-[85vh] rounded shadow-inner border"
-          />
-        )}
+        <iframe
+          key={iframeKey}
+          src={showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com"}
+          sandbox="allow-same-origin allow-scripts"
+          className="w-full h-[85vh] rounded border"
+        />
       </main>
     </div>
   )
