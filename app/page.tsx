@@ -107,6 +107,12 @@ export default function Home() {
 
       if (!res.ok) throw new Error("Backend fout: " + res.statusText)
       const data = await res.json()
+
+      // Logging toegevoegd om te debuggen waarom de knop niet verschijnt
+      console.log("hasChanges:", data.instructions?.hasChanges)
+      console.log("files:", data.files)
+      console.log("html:", data.instructions?.html)
+
       const instructions = data.instructions || {}
 
       const aiMsg: ChatMessage = {
