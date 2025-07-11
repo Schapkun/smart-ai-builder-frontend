@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { supabase } from "../lib/supabaseClient"
 import { RefreshCcw, Upload } from "lucide-react"
-// ↓ nieuw toegevoegd:
 import { Octokit } from "@octokit/rest"
 
 // maak één Octokit-client aan (buiten je component)
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN
 })
+
 
 
 interface Version {
@@ -29,6 +30,7 @@ interface ChatMessage {
   hasChanges?: boolean
   loading?: boolean
   showCode?: boolean
+  files?: any        // ← toevoegen, anders krijg je een fout op `files: data.files`
 }
 
 export default function Home() {
