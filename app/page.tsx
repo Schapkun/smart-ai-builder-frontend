@@ -85,51 +85,53 @@ export default function Home() {
   }
 
   async function handleSubmit() {
-    if (prompt.trim() === "") return
+  if (prompt.trim() === "") return
 
-    const userInput = prompt
-    const userMsg: ChatMessage = { role: "user", content: userInput }
-    const loadingMsg: ChatMessage = { role: "assistant", content: "...", loading: true }
+  const userInput = prompt
+  const userMsg: ChatMessage = { role: "user", content: userInput }
+  const loadingMsg: ChatMessage = { role: "assistant", content: "...", loading: true }
 
-    setChatHistory((prev) => [...prev, userMsg, loadingMsg])
-    setPrompt("")
+  setChatHistory((prev) => [...prev, userMsg, loadingMsg])
+  setPrompt("")
 
-    try {
-      const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: userInput,
-          page_route: currentPageRoute,
-          chat_history: [...chatHistory, userMsg],
-        }),
-      })
+  try {
+    const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: userInput,
+        page_route: currentPageRoute,
+        chat_history: [...chatHistory, userMsg],
+      }),
+    })
 
-      if (!res.ok) throw new Error("Backend fout: " + res.statusText)
-      const data = await res.json()
+    if (!res.ok) throw new Error("Backend fout: " + res.statusText)
+    const data = await res.json()
 
-      // Logging toegevoegd om te debuggen waarom de knop niet verschijnt
-      console.log("hasChanges:", data.instructions?.hasChanges)
-      console.log("files:", data.files)
-      console.log("html:", data.instructions?.html)
+    // Logging toegevoegd om te debuggen waarom de knop niet verschijnt
+    console.log("hasChanges:", data.instructions?.hasChanges)
+    console.log("files:", data.files)
+    console.log("html:", data.instructions?.html)
 
-      const instructions = data.instructions || {}
+    const instructions = data.instructions || {}
 
-      const aiMsg: ChatMessage = {
-        role: "assistant",
-        content: instructions.message || "Ik heb je prompt ontvangen.",
-        explanation: instructions.message || undefined,
-        html: instructions.html || undefined,
-        hasChanges: instructions.hasChanges || false,
-        loading: false,
-        showCode: false,
-      }
-
-      setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
-    } catch (e: any) {
-      alert("Fout bij AI-aanroep: " + e.message)
+    const aiMsg: ChatMessage = {
+      role: "assistant",
+      content: instructions.message || "Ik heb je prompt ontvangen.",
+      explanation: instructions.message || undefined,
+      html: instructions.html || undefined,
+      hasChanges: instructions.hasChanges || false,
+      loading: false,
+      showCode: false,
+      files: data.files, // <-- Hier toegevoegd
     }
+
+    setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
+  } catch (e: any) {
+    alert("Fout bij AI-aanroep: " + e.message)
   }
+}
+
 
   async function implementChange(html: string, originalPrompt: string) {
     const timestamp = new Date().toISOString()
