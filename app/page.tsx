@@ -119,7 +119,7 @@ export default function Home() {
         role: "assistant",
         content: instructions.message || "Ik heb je prompt ontvangen.",
         explanation: instructions.message || undefined,
-        html: data.html || undefined,
+        html: instructions.html || undefined,
         hasChanges: instructions.hasChanges || false,
         loading: false,
         showCode: false,
