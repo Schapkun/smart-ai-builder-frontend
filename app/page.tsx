@@ -1,8 +1,15 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { supabase } from "../lib/supabaseClient"
 import { RefreshCcw, Upload } from "lucide-react"
+// ↓ nieuw toegevoegd:
+import { Octokit } from "@octokit/rest"
+
+// maak één Octokit-client aan (buiten je component)
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN
+})
+
 
 interface Version {
   id: string
@@ -134,42 +141,44 @@ export default function Home() {
 
 
   async function implementChange(html: string, originalPrompt: string) {
-    const timestamp = new Date().toISOString()
-    const timestamp_local = new Date().toLocaleString("sv-SE", {
-      timeZone: "Europe/Amsterdam",
-      hour12: false,
+  // 1) Update UI meteen
+  setHtmlPreview(html)
+  setShowLiveProject(false)
+
+  try {
+    // 2) Haal huidige file-SHA op (nodig voor update)
+    const getResp = await octokit.repos.getContent({
+      owner: "JOUW_GITHUB_USER",
+      repo:  "JOUW_REPO_NAAM",
+      path:  `pages/${currentPageRoute}.html`,
+    })
+    const sha = Array.isArray(getResp.data)
+      ? (getResp.data[0] as any).sha
+      : (getResp.data as any).sha
+
+    // 3) Commit de HTML naar GitHub
+    await octokit.repos.createOrUpdateFileContents({
+      owner:   "JOUW_GITHUB_USER",
+      repo:    "JOUW_REPO_NAAM",
+      path:    `pages/${currentPageRoute}.html`,
+      message: `Automatisch bijgewerkt via AI: ${originalPrompt}`,
+      content: Buffer.from(html).toString("base64"),
+      sha,    // weglaten als nieuw bestand
     })
 
-    const newVersion = {
-      prompt: originalPrompt,
-      html_preview: html,
-      timestamp,
-      timestamp_local,
-      supabase_instructions: JSON.stringify({ bron: "chat-implementatie" }),
-      page_route: currentPageRoute,
-    }
-
-    setHtmlPreview(html)
-    setShowLiveProject(false)
-
-    const { error } = await supabase.from("versions").insert([newVersion])
-    if (!error) {
-      fetchVersions()
-      const successMsg: ChatMessage = {
-        role: "assistant",
-        content: "🚀 Wijziging succesvol toegepast.",
-        loading: false,
-      }
-      setChatHistory((prev) => [...prev, successMsg])
-    } else {
-      const errorMsg: ChatMessage = {
-        role: "assistant",
-        content: `❌ Fout bij opslaan wijziging: ${error.message}`,
-        loading: false,
-      }
-      setChatHistory((prev) => [...prev, errorMsg])
-    }
+    // 4) Feedback in de chat
+    setChatHistory((prev) => [
+      ...prev,
+      { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false }
+    ])
+  } catch (err: any) {
+    setChatHistory((prev) => [
+      ...prev,
+      { role: "assistant", content: `❌ Fout bij GitHub-commit: ${err.message}`, loading: false }
+    ])
   }
+}
+
 
   async function publishLive() {
     if (!versionId) return alert("Selecteer eerst een versie om live te zetten.")
