@@ -12,7 +12,8 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "@supabase/supabase-js": "^2.31.0",
-    "lucide-react": "^0.291.0"
+    "lucide-react": "^0.291.0",
+    "@octokit/rest": "^19.0.7"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
