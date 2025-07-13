@@ -188,7 +188,6 @@ export default function Home() {
     } catch (err: any) {
       alert("Fout bij herstellen: " + err.message);
     }
-  }
 
   async function implementChange(html: string, originalPrompt: string) {
   // 1) UI meteen bijwerken
