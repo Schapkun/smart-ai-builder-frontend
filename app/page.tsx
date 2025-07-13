@@ -331,7 +331,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-4 bg-white px-4 py-2 rounded">
           <span className="text-sm text-zinc-700 break-all">
             {currentIframeUrl || iframeSrc}
-          </span>w
+          </span>
           <button
             onClick={() => setShowLiveProject(!showLiveProject)}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
