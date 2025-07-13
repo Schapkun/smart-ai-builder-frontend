@@ -133,35 +133,6 @@ export default function Home() {
   }
 }
 
-
-    async function implementChange(html: string, originalPrompt: string) {
-    // 1) UI meteen bijwerken
-    setHtmlPreview(html)
-    setShowLiveProject(false)
-
-    try {
-      // 2) Roep je server-API aan
-      const res = await fetch("/api/commit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ html, prompt: originalPrompt }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Onbekende fout")
-
-      // 3) Feedback in de chat
-      setChatHistory((prev) => [
-        ...prev,
-        { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false },
-      ])
-    } catch (err: any) {
-      setChatHistory((prev) => [
-        ...prev,
-        { role: "assistant", content: `❌ Fout bij commit: ${err.message}`, loading: false },
-      ])
-    }
-  }
-
   async function publishLive() {
     if (!versionId) return alert("Selecteer eerst een versie om live te zetten.")
     setLoadingPublish(true)
