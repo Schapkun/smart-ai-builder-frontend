@@ -134,68 +134,33 @@ export default function Home() {
 }
 
 
-  async function implementChange(html: string, originalPrompt: string) {
-  // 1) UI meteen bijwerken
-  setHtmlPreview(html)
-  setShowLiveProject(false)
+    async function implementChange(html: string, originalPrompt: string) {
+    // 1) UI meteen bijwerken
+    setHtmlPreview(html)
+    setShowLiveProject(false)
 
-  let filePath: string
+    try {
+      // 2) Roep je server-API aan
+      const res = await fetch("/api/commit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, prompt: originalPrompt }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Onbekende fout")
 
-  // 2) Zoek in de hele repo naar de oude titel of een herkenbare marker
-  try {
-    const zoekterm = html.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] || originalPrompt
-    const searchRes = await octokit.search.code({
-      q: `repo:JOUW_GITHUB_USER/JOUW_REPO_NAAM "${zoekterm}"`
-    })
-    if (searchRes.data.items.length === 0) {
-      throw new Error(`Geen bestand gevonden voor tekst: ${zoekterm}`)
+      // 3) Feedback in de chat
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false },
+      ])
+    } catch (err: any) {
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "assistant", content: `❌ Fout bij commit: ${err.message}`, loading: false },
+      ])
     }
-    filePath = searchRes.data.items[0].path
-  } catch (err: any) {
-    setChatHistory((prev) => [
-      ...prev,
-      { role: "assistant", content: `❌ Bestand zoeken mislukt: ${err.message}`, loading: false }
-    ])
-    return
   }
-
-  // 3) Haal bestaande file-SHA op (voor update)
-  let sha: string | undefined
-  try {
-    const getResp = await octokit.repos.getContent({
-      owner: "JOUW_GITHUB_USER",
-      repo:  "JOUW_REPO_NAAM",
-      path:  filePath,
-    })
-    sha = Array.isArray(getResp.data)
-      ? (getResp.data[0] as any).sha
-      : (getResp.data as any).sha
-  } catch {
-    // 404 betekent nieuw bestand; laat sha ongedefinieerd
-  }
-
-  // 4) Commit de nieuwe HTML naar het gevonden bestand
-  try {
-    await octokit.repos.createOrUpdateFileContents({
-      owner:   "JOUW_GITHUB_USER",
-      repo:    "JOUW_REPO_NAAM",
-      path:    filePath,
-      message: `AI-update: ${originalPrompt}`,
-      content: Buffer.from(html).toString("base64"),
-      ...(sha ? { sha } : {}),
-    })
-    setChatHistory((prev) => [
-      ...prev,
-      { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false }
-    ])
-  } catch (err: any) {
-    setChatHistory((prev) => [
-      ...prev,
-      { role: "assistant", content: `❌ Fout bij GitHub-commit: ${err.message}`, loading: false }
-    ])
-  }
-}
-
 
   async function publishLive() {
     if (!versionId) return alert("Selecteer eerst een versie om live te zetten.")
