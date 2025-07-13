@@ -3,14 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import { supabase } from "../lib/supabaseClient"
 import { RefreshCcw, Upload } from "lucide-react"
-import { Octokit } from "@octokit/rest"
-
-// maak één Octokit-client aan (buiten je component)
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN
-})
-
-
 
 interface Version {
   id: string
@@ -242,22 +234,33 @@ export default function Home() {
     setLoadingPublish(false)
   }
 
-  async function restoreVersion(versionId: string) {
-    const res = await fetch("https://smart-ai-builder-backend.onrender.com/restore", {
+  async function implementChange(html: string, originalPrompt: string) {
+  // 1) UI meteen bijwerken
+  setHtmlPreview(html)
+  setShowLiveProject(false)
+
+  try {
+    // 2) Roept jouw server-API aan ipv Octokit direct
+    const res = await fetch("/api/commit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ version_id: versionId }),
+      body: JSON.stringify({ html, prompt: originalPrompt }),
     })
-
     const data = await res.json()
-    if (res.ok) {
-      alert("Versie succesvol hersteld naar preview!")
-      setShowLiveProject(false)
-      fetchVersions()
-    } else {
-      alert("Fout bij herstellen: " + (data.error || data.message))
-    }
+    if (!res.ok) throw new Error(data.error || "Onbekende fout")
+
+    // 3) Feedback in de chat
+    setChatHistory((prev) => [
+      ...prev,
+      { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false },
+    ])
+  } catch (err: any) {
+    setChatHistory((prev) => [
+      ...prev,
+      { role: "assistant", content: `❌ Fout bij commit: ${err.message}`, loading: false },
+    ])
   }
+}
 
   function selectVersion(v: Version) {
     setPrompt(v.prompt)
