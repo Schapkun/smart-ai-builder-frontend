@@ -133,7 +133,7 @@ export default function Home() {
   }
 }
 
-  async function publishLive() {
+    async function publishLive() {
     if (!versionId) return alert("Selecteer eerst een versie om live te zetten.")
     setLoadingPublish(true)
 
@@ -169,53 +169,56 @@ export default function Home() {
 
     setLoadingPublish(false)
   }
-    // ← zet dit direct na je publishLive-functie
+
+  // ← Hier sluit je publishLive af met één ‘}’
+
   async function restoreVersion(versionId: string) {
     try {
       const res = await fetch("/api/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ version_id: versionId }),
-      });
-      const data = await res.json();
+      })
+      const data = await res.json()
       if (res.ok) {
-        alert("Versie succesvol hersteld naar preview!");
-        setShowLiveProject(false);
-        fetchVersions();
+        alert("Versie succesvol hersteld naar preview!")
+        setShowLiveProject(false)
+        fetchVersions()
       } else {
-        alert("Fout bij herstellen: " + (data.error || data.message));
+        alert("Fout bij herstellen: " + (data.error || data.message))
       }
     } catch (err: any) {
-      alert("Fout bij herstellen: " + err.message);
+      alert("Fout bij herstellen: " + err.message)
     }
+  } // ← Hier sluit je restoreVersion af met één ‘}’
 
   async function implementChange(html: string, originalPrompt: string) {
-  // 1) UI meteen bijwerken
-  setHtmlPreview(html)
-  setShowLiveProject(false)
+    // 1) UI meteen bijwerken
+    setHtmlPreview(html)
+    setShowLiveProject(false)
 
-  try {
-    // 2) Roept jouw server-API aan ipv Octokit direct
-    const res = await fetch("/api/commit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ html, prompt: originalPrompt }),
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || "Onbekende fout")
+    try {
+      // 2) Roept jouw server-API aan ipv Octokit direct
+      const res = await fetch("/api/commit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, prompt: originalPrompt }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Onbekende fout")
 
-    // 3) Feedback in de chat
-    setChatHistory((prev) => [
-      ...prev,
-      { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false },
-    ])
-  } catch (err: any) {
-    setChatHistory((prev) => [
-      ...prev,
-      { role: "assistant", content: `❌ Fout bij commit: ${err.message}`, loading: false },
-    ])
-  }
-}
+      // 3) Feedback in de chat
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false },
+      ])
+    } catch (err: any) {
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "assistant", content: `❌ Fout bij commit: ${err.message}`, loading: false },
+      ])
+    }
+  } // ← Hier sluit je implementChange af
 
   function selectVersion(v: Version) {
     setPrompt(v.prompt)
