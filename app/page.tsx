@@ -86,54 +86,54 @@ export default function Home() {
   }
 
   async function handleSubmit() {
-    if (prompt.trim() === "") return
+  if (prompt.trim() === "") return
 
-    const userInput = prompt
-    const userMsg: ChatMessage = { role: "user", content: userInput }
-    const loadingMsg: ChatMessage = { role: "assistant", content: "...", loading: true }
+  const userInput = prompt
+  const userMsg: ChatMessage = { role: "user", content: userInput }
+  const loadingMsg: ChatMessage = { role: "assistant", content: "...", loading: true }
 
-    setChatHistory((prev) => [...prev, userMsg, loadingMsg])
-    setPrompt("")
+  setChatHistory((prev) => [...prev, userMsg, loadingMsg])
+  setPrompt("")
 
-    try {
-      const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: userInput,
-          page_route: currentPageRoute,
-          chat_history: [...chatHistory, userMsg],
-        }),
-      })
+  try {
+    const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: userInput,
+        page_route: currentPageRoute,
+        chat_history: [...chatHistory, userMsg],
+      }),
+    })
 
-      if (!res.ok) throw new Error("Backend fout: " + res.statusText)
-      const data = await res.json()
+    if (!res.ok) throw new Error("Backend fout: " + res.statusText)
+    const data = await res.json()
 
-      // Logging toegevoegd om te debuggen waarom de knop niet verschijnt
-      console.log("hasChanges:", data.instructions?.hasChanges)
-      console.log("files:", data.files)
-      console.log("html:", data.instructions?.html)
+    // Logging toegevoegd om te debuggen waarom de knop niet verschijnt
+    console.log("hasChanges:", data.instructions?.hasChanges)
+    console.log("files:", data.files)
+    console.log("html:", data.instructions?.html)
 
-      const instructions = data.instructions || {}
+    const instructions = data.instructions || {}
 
-      const aiMsg: ChatMessage = {
-        role: "assistant",
-        content: instructions.message || "Ik heb je prompt ontvangen.",
-        explanation: instructions.message || undefined,
-        html: instructions.html || undefined,
-        hasChanges: instructions.hasChanges || false,
-        loading: false,
-        showCode: false,
-        files: data.files, // <-- Hier toegevoegd
-      }
-
-      setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
-    } catch (e: any) {
-      alert("Fout bij AI-aanroep: " + e.message)
+    const aiMsg: ChatMessage = {
+      role: "assistant",
+      content: instructions.message || "Ik heb je prompt ontvangen.",
+      explanation: instructions.message || undefined,
+      html: instructions.html || undefined,
+      hasChanges: instructions.hasChanges || false,
+      loading: false,
+      showCode: false,
+      files: data.files, // <-- Hier toegevoegd
     }
-  }
 
-  async function publishLive() {
+    setChatHistory((prev) => [...prev.slice(0, -1), aiMsg])
+  } catch (e: any) {
+    alert("Fout bij AI-aanroep: " + e.message)
+  }
+}
+
+    async function publishLive() {
     if (!versionId) return alert("Selecteer eerst een versie om live te zetten.")
     setLoadingPublish(true)
 
@@ -170,11 +170,13 @@ export default function Home() {
     setLoadingPublish(false)
   }
 
+  // ← Hier sluit je publishLive af met één ‘}’
+
   async function restoreVersion(versionId: string) {
     try {
       const res = await fetch("/api/restore", {
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ version_id: versionId }),
       })
       const data = await res.json()
@@ -188,7 +190,7 @@ export default function Home() {
     } catch (err: any) {
       alert("Fout bij herstellen: " + err.message)
     }
-  }
+  } // ← Hier sluit je restoreVersion af met één ‘}’
 
   async function implementChange(html: string, originalPrompt: string) {
     // 1) UI meteen bijwerken
@@ -196,6 +198,7 @@ export default function Home() {
     setShowLiveProject(false)
 
     try {
+      // 2) Roept jouw server-API aan ipv Octokit direct
       const res = await fetch("/api/commit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -204,6 +207,7 @@ export default function Home() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Onbekende fout")
 
+      // 3) Feedback in de chat
       setChatHistory((prev) => [
         ...prev,
         { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false },
@@ -214,7 +218,7 @@ export default function Home() {
         { role: "assistant", content: `❌ Fout bij commit: ${err.message}`, loading: false },
       ])
     }
-  }
+  } // ← Hier sluit je implementChange af
 
   function selectVersion(v: Version) {
     setPrompt(v.prompt)
