@@ -99,15 +99,17 @@ export default function Home() {
   setPrompt("")
 
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/prompt`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: userInput,
-        page_route: currentPageRoute,
-        chat_history: [...chatHistory, userMsg],
-      }),
-    })
+  console.log("🔍 DEBUG - Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL)
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/prompt`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prompt: userInput,
+      page_route: currentPageRoute,
+      chat_history: [...chatHistory, userMsg],
+    }),
+  })
 
     if (!res.ok) {
       const text = await res.text()
