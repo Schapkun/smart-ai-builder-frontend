@@ -99,7 +99,6 @@ export default function Home() {
   setPrompt("")
 
   try {
-  console.log("🔍 DEBUG - Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL)
 
   const res = await fetch(`${API_BASE}/prompt`, {
     method: "POST",
