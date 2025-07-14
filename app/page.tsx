@@ -22,10 +22,13 @@ interface ChatMessage {
   hasChanges?: boolean
   loading?: boolean
   showCode?: boolean
-  files?: any        // ← toevoegen, anders krijg je een fout op `files: data.files`
+  files?: any
 }
 
 export default function Home() {
+  // basis-URL uit env var
+  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL!
+
   const [prompt, setPrompt] = useState("")
   const [versionId, setVersionId] = useState<string | null>(null)
   const [versions, setVersions] = useState<Version[]>([])
@@ -96,7 +99,7 @@ export default function Home() {
     setPrompt("")
 
     try {
-      const res = await fetch("https://smart-ai-builder-backend.onrender.com/prompt", {
+      const res = await fetch(`${API_BASE}/prompt`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -148,7 +151,7 @@ export default function Home() {
         return
       }
 
-      const publishRes = await fetch("https://smart-ai-builder-backend.onrender.com/publish", {
+      const publishRes = await fetch(`${API_BASE}/publish`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ version_id: data.id }),
@@ -167,11 +170,11 @@ export default function Home() {
     }
 
     setLoadingPublish(false)
-  } // ← Hier sluit je publishLive af met één ‘}’
+  }
 
   async function restoreVersion(versionId: string) {
     try {
-      const res = await fetch("https://preview-version.onrender.com/api/restore", {
+      const res = await fetch(`${API_BASE}/restore`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ version_id: versionId }),
@@ -187,7 +190,7 @@ export default function Home() {
     } catch (err: any) {
       alert("Fout bij herstellen: " + err.message)
     }
-  } // ← Hier sluit je restoreVersion af met één ‘}’
+  }
 
   async function implementChange(html: string, originalPrompt: string) {
     // 1) UI meteen bijwerken
@@ -195,8 +198,7 @@ export default function Home() {
     setShowLiveProject(false)
 
     try {
-      // 2) Roept jouw server-API aan op Render
-      const res = await fetch("https://preview-version.onrender.com/api/commit", {
+      const res = await fetch(`${API_BASE}/commit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ html, prompt: originalPrompt }),
@@ -204,7 +206,6 @@ export default function Home() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Onbekende fout")
 
-      // 3) Feedback in de chat
       setChatHistory((prev) => [
         ...prev,
         { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false },
@@ -215,7 +216,7 @@ export default function Home() {
         { role: "assistant", content: `❌ Fout bij commit: ${err.message}`, loading: false },
       ])
     }
-  } // ← Hier sluit je implementChange af
+  }
 
   function selectVersion(v: Version) {
     setPrompt(v.prompt)
@@ -310,10 +311,7 @@ export default function Home() {
                 </time>
                 <p className="truncate text-sm">{v.prompt}</p>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    restoreVersion(v.id)
-                  }}
+                  onClick={(e) => { e.stopPropagation(); restoreVersion(v.id) }}
                   className="mt-1 text-xs text-blue-500 underline"
                 >
                   Herstel naar preview
