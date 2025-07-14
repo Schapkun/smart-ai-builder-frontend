@@ -101,7 +101,7 @@ export default function Home() {
   try {
   console.log("🔍 DEBUG - Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL)
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/prompt`, {
+  const res = await fetch(`${API_BASE}/prompt`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
