@@ -44,7 +44,7 @@ export default function Home() {
 
   const iframeSrc = showLiveProject
     ? "https://meester.app"
-    : "https://preview-version.onrender.com"
+    : "https://preview-version-meester-77tq.onrender.com"
 
   useEffect(() => {
     fetchVersions()
@@ -342,7 +342,7 @@ export default function Home() {
 
         <iframe
           key={iframeKey}
-          src={showLiveProject ? "https://meester.app" : "https://preview-version.onrender.com"}
+          src={showLiveProject ? "https://meester.app" : "https://preview-version-meester-77tq.onrender.com"}
           sandbox="allow-same-origin allow-scripts"
           className="w-full h-[85vh] rounded border"
         />
