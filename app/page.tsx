@@ -27,7 +27,7 @@ interface ChatMessage {
 
 export default function Home() {
   // basis-URL uit env var
-  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL!
+  const API_BASE = "https://smart-ai-builder-backend.onrender.com"
 
   const [prompt, setPrompt] = useState("")
   const [versionId, setVersionId] = useState<string | null>(null)
