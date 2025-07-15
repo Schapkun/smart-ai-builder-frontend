@@ -37,13 +37,13 @@ export default function Home() {
   const [loadingPublish, setLoadingPublish] = useState(false)
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
   const [currentPageRoute, setCurrentPageRoute] = useState("homepage")
-  const [currentIframeUrl, setCurrentIframeUrl] = useState<string>("https://meester.app")
+  const [currentIframeUrl, setCurrentIframeUrl] = useState<string>("https://www.meester.app")
   const [iframeKey, setIframeKey] = useState(0)
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   const iframeSrc = showLiveProject
-    ? "https://meester.app"
+    ? "https://www.meester.app"
     : "https://preview-version-meester.onrender.com"
 
   useEffect(() => {
@@ -342,7 +342,7 @@ export default function Home() {
 
         <iframe
           key={iframeKey}
-          src={showLiveProject ? "https://meester.app" : "https://preview-version-meester.onrender.com"}
+          src={showLiveProject ? "https://www.meester.app" : "https://preview-version-meester.onrender.com"}
           sandbox="allow-same-origin allow-scripts"
           className="w-full h-[85vh] rounded border"
         />
