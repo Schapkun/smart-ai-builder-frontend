@@ -345,11 +345,11 @@ export default function Home() {
         </div>
 
         <iframe
-          key={iframeKey}
-          src={showLiveProject ? "https://www.meester.app" : "https://preview-version-meester.onrender.com"}
-          sandbox="allow-same-origin allow-scripts"
-          className="w-full h-[85vh] rounded border"
-        />
+  key={iframeKey}
+  src={showLiveProject ? "https://www.meester.app" : "https://preview-version-meester.onrender.com"}
+  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-storage-access-by-user-activation"
+  className="w-full h-[85vh] rounded border"
+/>
       </main>
     </div>
   )
