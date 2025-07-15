@@ -333,7 +333,11 @@ export default function Home() {
             {currentIframeUrl || iframeSrc}
           </span>
           <button
-            onClick={() => setShowLiveProject(!showLiveProject)}
+            onClick={() => {
+  const newState = !showLiveProject
+  setShowLiveProject(newState)
+  setCurrentIframeUrl(newState ? "https://www.meester.app" : "https://preview-version-meester.onrender.com")
+}}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
           >
             {showLiveProject ? "Toon preview" : "Toon live"}
