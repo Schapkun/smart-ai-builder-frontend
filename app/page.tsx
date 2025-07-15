@@ -213,7 +213,7 @@ export default function Home() {
 
       setChatHistory((prev) => [
         ...prev,
-        { role: "assistant", content: "🚀 Wijziging succesvol naar GitHub gepusht.", loading: false },
+        { role: "assistant", content: "🚀 Wijziging succesvol gepusht.", loading: false },
       ])
     } catch (err: any) {
       setChatHistory((prev) => [
