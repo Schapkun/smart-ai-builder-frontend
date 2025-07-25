@@ -27,7 +27,7 @@ interface ChatMessage {
 
 export default function Home() {
   // basis-URL uit env var
-  const API_BASE = "https://smart-ai-builder-backend.onrender.com"
+  const API_BASE = "http://128.199.56.196:8000"
 
   const [prompt, setPrompt] = useState("")
   const [versionId, setVersionId] = useState<string | null>(null)
@@ -44,7 +44,7 @@ export default function Home() {
 
   const iframeSrc = showLiveProject
     ? "https://www.meester.app"
-    : "https://preview-version-meester.onrender.com"
+    : "http://128.199.56.196:8080"
 
   useEffect(() => {
     fetchVersions()
@@ -336,7 +336,7 @@ export default function Home() {
             onClick={() => {
   const newState = !showLiveProject
   setShowLiveProject(newState)
-  setCurrentIframeUrl(newState ? "https://www.meester.app" : "https://preview-version-meester.onrender.com")
+  setCurrentIframeUrl(newState ? "https://www.meester.app" : "http://128.199.56.196:8080")
 }}
             className="bg-zinc-200 hover:bg-zinc-300 text-sm px-4 py-2 rounded"
           >
@@ -346,7 +346,7 @@ export default function Home() {
 
         <iframe
   key={iframeKey}
-  src={showLiveProject ? "https://www.meester.app" : "https://preview-version-meester.onrender.com"}
+  src={showLiveProject ? "https://www.meester.app" : "http://128.199.56.196:8080"}
   sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-storage-access-by-user-activation"
   className="w-full h-[85vh] rounded border"
 />
